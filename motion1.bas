@@ -10,15 +10,16 @@ PRINT "总线通讯周期：",SERVO_PERIOD,"us"
 
 GLOBAL CONST BUS_NODE_NUM = 5  ' 期望连接的设备数
 GLOBAL CONST BUS_SLOT = 0  ' 槽位号，默认0
-GLOBAL bus_initsate ' 总线初始化状态
+GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
+GLOBAL home_initstate  ' 回零操作
 
-bus_initsate = -1
-
+bus_initstate = -1
+home_initstate = -1
 
 Ecat_Init()
 
-WHILE (bus_initsate = 0)
+WHILE (bus_initstate = 0)
     Ecat_Init()
 WEND
 
@@ -35,10 +36,11 @@ dim u_j4      '关节4实际1mm脉冲数
 dim u_j5      '关节5实际1mm脉冲数 
 
 CONST PB = 5  ' mm，丝杠导程
-CONST ENCODER_PER_ROE = 8388607  ' 2^23-1
+CONST ENCODER_PER_ROE = 8388608  ' 2^23
 
 ' UNITS为指定运行一个单位需要的脉冲数，之后所有的运动指令都以此为单位
-' 总线也要设置UNITS，见手册ATYPE
+' 经过实测，电机运行一圈的脉冲数就是编码器一圈的数值，前提是驱动器中没有设置电子齿轮
+' 不仅是脉冲轴，总线轴也要设置UNITS
 
 ''======================== TO DO 考虑用常量的方式实现宏定义的功能，例如轴编号========================''
 
@@ -47,24 +49,34 @@ dim a1  '' 实际上应该是向量
 dim a2
 dim PulesVROneCircle   '虚拟姿态轴一圈脉冲数
 
-DEFINE_CFRAME  1001,5,1,0,1000    'framenum, totalaxises, axises_aux?,  max_attitudes,  rotatetype?
+DEFINE_CFRAME  1001,5,1,0,1000    'framenum, totalaxises, axises_aux,  max_attitudes,  rotatetype?
 
 ''======================== TO DO 对几何尺寸变量进行赋值========================''
 a1 = 0  '' 实际上应该是向量
-PulesVROneCircle=360*1000
 
 
 ''======================== TO DO 赋值========================''
-u_j1 = 1000
-
-
+' 此处设单位为1mm
+u_j1 = ENCODER_PER_ROE / PB
+u_j2 = ENCODER_PER_ROE / PB
+u_j3 = ENCODER_PER_ROE / PB
+u_j4 = ENCODER_PER_ROE / PB
+u_j5 = ENCODER_PER_ROE / PB
 
 '' 设置关节轴
 BASE(0,1,2,3,4)
 ' ATYPE在总线初始化时就设置
-UNITS = u_j1/360,u_j2/360,u_j3/360,u_j4/360  ' 把units设成每°脉冲数
+UNITS = u_j1, u_j2, u_j3, u_j4, u_j5  ' 把units设成每°脉冲数
+
+
+''======================== TO DO 回零位========================''
+home_single_axis()
+IF home_initstate = 0 THEN
+    home_single_axis()
+ENDIF
 
 DPOS=0,0,0,0,0  '设置关节轴的位置，此处要根据实际情况来修改。=======要结合回零位=========
+
 
 '' 运动参数设置
 speed=100,100,100,100,100
@@ -104,11 +116,10 @@ WAIT LOADED  '' 等待加载完成
 '' 逆解状态下，只要move虚拟轴就可以了？
 
 
-BAES(6,7,8,9,10,11)  ' 控制虚拟轴
+BASE(6,7,8,9,10,11)  ' 控制虚拟轴
 ''======================== TO DO 接收上位机发来的数据，并使用MOVE等运动指令========================''
 
 
-''======================== TO DO 回零位========================''
 
 ''======================== TO DO 驱动器模式设置========================''
 ' DRIVE_TORQUE 获取驱动器力矩

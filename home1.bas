@@ -1,0 +1,71 @@
+'' 该程序作用是回零位，常用于上电后的操作
+'' 常规思路：电机先高速运动，需要原点传感器，找到之后回退，在低速靠近，检测到跳变后再停止，设此时的位置为0
+'' 可能的问题：多轴的耦合，传感器的精度
+'' 思路2：使用绝对值编码器，手动调好零位后，设置Z信号为0
+'' 回零方式通过 6098h来设置（优先考虑29），待选模式：11-14，区别点在于Z信号与原点开关的关系(如何修改？属于6000h对象字典)（如何设置Z信号？）
+'' 思路3：驱动器+限位传感器
+'' 硬件上限位NPN传感器信号接到驱动器上（正负/高低电平的逻辑？）
+'' 回零方式通过 6098h来设置（优先考虑29），待选模式：27反向逼近+下降沿，28反向逼近+上升沿，29正向逼近+上升沿停机，30正向逼近+下降沿停机，（正反方向是怎么确定的？）
+'' 电机转向方式，修改H02.02
+
+'' =======控制器相关=======
+'' 多轴回零时，需要每个轴都使用 DATUM 指令
+'' 总线控制器使用控制器找原点模式完成后，需要手动清零 MPOS
+'' DATUM 指令后不能接绝对指令和mover 指令
+
+'' Q1:6000h组参数修改
+'' Q2:Z信号设置
+
+'' 请在此前执行总线初始化
+GLOBAL SUB home_single_axis()
+    IF bus_initstate <> 1 THEN
+        PRINT "总线未初始化"
+        END SUB
+    ENDIF
+
+    BASE(0)
+    creep = 10  ' 回零反找时的速度
+    speed = 100
+    accel = 1000
+    decel = 1000
+    
+    '' 按照控制器回零
+    DATUM(21, 4)  ' 21总线模式，4表示具体的回零策略，可替换
+
+    '' 按照驱动器回零
+    '' DATUM(21, 0)  ' 需提前在驱动器中设置好回零模式
+
+    WHILE 1
+        TABLE(0) = DRIVE_STATUS
+        home_initstate = 0  ' 0表示回零没好
+        IF READ_BIT2(10, TABLE(0)) THEN
+            IF READ_BIT2(12, TABLE(0)) THEN
+                PRINT "Home Finish"
+                home_initstate = 1
+            ENDIF
+        ENDIF
+    WEND
+
+
+END SUB
+
+GLOBAL SUB home_robot()
+    IF bus_initstate <> 1 THEN
+        PRINT "总线未初始化"
+        END SUB
+    ENDIF
+
+    ' === TO DO ===
+    dim i_axis
+    FOR i_axis = 0 TO bus_total_axis_num
+        BASE(i_axis)
+        creep = 10  ' 回零反找时的速度
+        speed = 100
+        accel = 1000
+        decel = 1000
+        DATUM(21, 4)  ' 21总线模式，4表示具体的回零策略，可替换
+    NEXT
+
+    '' 如果有多个轴，drive_status是什么样的
+
+END SUB

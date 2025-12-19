@@ -5,7 +5,7 @@ GLOBAL SUB Ecat_Init()
     RAPIDSTOP(2)
     WAIT IDLE
 
-    bus_initsate = -1
+    bus_initstate = -1
     bus_total_axis_num = 0
     SLOT_STOP(BUS_SLOT)
     DELAY(200)
@@ -17,7 +17,7 @@ GLOBAL SUB Ecat_Init()
         PRINT "期望连接设备数："BUS_NODE_NUM
 
         IF NODE_COUNT(BUS_SLOT) <> BUS_NODE_NUM THEN
-            bus_initsate = 0
+            bus_initstate = 0
             RETURN
         ENDIF
 
@@ -55,15 +55,15 @@ GLOBAL SUB Ecat_Init()
                 AXIS_ENABLE = 1  ' 单轴使能
             NEXT
 
-            bus_initsate = 1
+            bus_initstate = 1
         
         ELSE
-            bus_initsate = 0
+            bus_initstate = 0
             PRINT "总线开启失败"
         ENDIF
 
     ELSE
-        bus_initsate = 0
+        bus_initstate = 0
         PRINT "总线扫描失败"
 
     ENDIF
