@@ -1,9 +1,9 @@
-DELAY(3000)  '�ȴ��������豸�ϵ����
-PRINT "����ͨѶ���ڣ�",SERVO_PERIOD,"us"
+DELAY(3000)
+PRINT "servo period:",SERVO_PERIOD,"us"
 
-GLOBAL CONST BUS_NODE_NUM = 1  ' �������ӵ��豸��
-GLOBAL CONST BUS_SLOT = 0  ' ��λ�ţ�Ĭ��0
-GLOBAL bus_initsate ' ���߳�ʼ��״̬
+GLOBAL CONST BUS_NODE_NUM = 1
+GLOBAL CONST BUS_SLOT = 0 
+GLOBAL bus_initsate
 GLOBAL bus_total_axis_num
 
 bus_initsate = -1
@@ -16,8 +16,8 @@ WHILE (bus_initsate = 0)
 WEND
 
 
-dim u_j1      '�ؽ�1ʵ��1mm������
-CONST PB = 5  ' mm��˿�ܵ���
+dim u_j1 
+CONST PB = 5 
 CONST ENCODER_PER_ROE = 8388608  ' 2^23
 
 u_j1 = ENCODER_PER_ROE / 360
