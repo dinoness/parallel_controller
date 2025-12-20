@@ -14,7 +14,11 @@
 '' DATUM 指令后不能接绝对指令和mover 指令
 
 '' Q1:6000h组参数修改
+'' A1:6098h直接通过DATUM指令的Mode2设置
 '' Q2:Z信号设置
+'' A2:
+'' Q3:使用29模式回零时，在遇到负限位时，驱动器会直接报错E630.0，而不会转变成正向运动。其中运动指令时通过控制器发送的
+'' A3:因为传感器安装在了机械限制外
 
 '' 请在此前执行总线初始化
 GLOBAL SUB home_single_axis()
@@ -24,27 +28,29 @@ GLOBAL SUB home_single_axis()
     ENDIF
 
     BASE(0)
-    creep = 10  ' 回零反找时的速度
+    creep = 50  ' 回零反找时的速度
     speed = 100
     accel = 1000
     decel = 1000
     
     '' 按照控制器回零
-    DATUM(21, 4)  ' 21总线模式，4表示具体的回零策略，可替换
+    DATUM(21, 17)  ' 21总线模式，29表示具体的回零策略，依据6098h的设定值填写
+	'' 17，以负限位作为停止点
+	
+	WAIT IDLE
 
     '' 按照驱动器回零
     '' DATUM(21, 0)  ' 需提前在驱动器中设置好回零模式
 
-    WHILE 1
-        TABLE(0) = DRIVE_STATUS
-        home_initstate = 0  ' 0表示回零没好
-        IF READ_BIT2(10, TABLE(0)) THEN
-            IF READ_BIT2(12, TABLE(0)) THEN
-                PRINT "Home Finish"
-                home_initstate = 1
-            ENDIF
+    TABLE(0) = DRIVE_STATUS
+    home_initstate = 0  ' 0表示回零没好
+    IF READ_BIT2(10, TABLE(0)) THEN
+        IF READ_BIT2(12, TABLE(0)) THEN
+            PRINT "Home Finish"
+            home_initstate = 1
         ENDIF
-    WEND
+    ENDIF
+	PRINT "home_initstate:"home_initstate
 
 
 END SUB
