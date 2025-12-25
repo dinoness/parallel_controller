@@ -1,8 +1,18 @@
-'' 实现目标：输入连续的位置（轨迹），输出控制电机
+' 用于测试机械手，运动，数据相关 2轴
+' ============= TO DO =============
+' 1. 测试多轴回零
+' 2. 测试虚拟轴脉冲数意义
+' 3. 测试机械手解算有效性
+' 4. 测试轨迹/指令传输有效性
+' 5. 测试运动指令对于机械手的有效性
+' 6. 测试机械手参数设置的正确性
+' 7. 测试矢量矩阵函数库的可用性
+
+
 DELAY(3000)  '等待驱动器设备上电完成
 PRINT "总线通讯周期：",SERVO_PERIOD,"us"  ' 也叫伺服周期
 
-GLOBAL CONST BUS_NODE_NUM = 1  ' 期望连接的设备数
+GLOBAL CONST BUS_NODE_NUM = 2  ' 期望连接的设备数
 GLOBAL CONST BUS_SLOT = 0  ' 槽位号，默认0
 GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
@@ -17,23 +27,57 @@ WHILE (bus_initstate = 0)
     Ecat_Init()
 WEND
 
-dim u_j1
 CONST PB = 5  ' mm，丝杠导程
 CONST ENCODER_PER_ROE = 8388608  ' 2^23
 
-u_j1 = ENCODER_PER_ROE / 360  ' ============UNIT为1°============
+dim u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1mm脉冲数
+dim u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1mm脉冲数
+dim u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1mm脉冲数
+dim u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1mm脉冲数 
+dim u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1mm脉冲数  ' ============UNIT为1mm============
 
-BASE(0)
-SPEED = 10
-ACCEL = 10
-DECEL = 10
-DPOS = 0
-UNITS = u_j1
+'' ==========  定义几何尺寸  ==========
+rob_para_config1(ROBO_PARA_START_ID, BUS_NODE_NUM)
 
-' 此处有回零
+'' ==========  定义机械手  ==========
+DEFINE_CFRAME  1000,BUS_NODE_NUM,0,0,0    'framenum, totalaxises, axises_aux,  max_attitudes,  rotatetype
 
+'' ==========  设置关节轴  ==========
+BASE(0,1)
+' ATYPE在总线初始化时就设置
+UNITS = u_j1, u_j2
+
+'' ==========  回零位  ==========
+home_robot()
+IF home_initstate = 0 THEN
+    home_robot()
+ENDIF
+
+dpos=0,0  '设置关节轴的位置
+speed=100,100
+accel=1000,1000
+decel=1000,1000
+
+'' 虚拟轴设置
+BASE(6,7)
+atype = 0,0  ' 取0设置为虚拟轴
+speed = 10,10  ' =====================虚拟轴的单位是什么意思??=====================
+' =====================整个两轴的试试??=====================
+UNITS= 1,1        '运动精度，要提前设置，中途不能变化
+
+TABLE(ROBO_PARA_START_ID,u_j1,u_j2,u_j3,u_j4,u_j5)  ' 将参数写入到TABLE中，这样C配置文件中会读取对应的参数，第一个参数是指数据的起始位置，尺寸数据已通过rob_para_config1写入
+
+'' 插补设置
 MERGE = ON
 
+'' 逆解模式
+BASE(0,1)
+CONNFRAME(1000,robo_para_start_id,6,7)
+WAIT LOADED  '' 等待加载完成
+
+BASE(6,7)  ' 控制虚拟轴
+
+' ============ 运动指令部分 ============
 ' trace config parameters
 DIM n_loop  '总循环次数
 DIM data_state  ' 数据状态
@@ -60,7 +104,6 @@ FOR n_loop = 0 TO (DataGroupNum - 1) STEP 1
 	MODBUS_REG(n_loop) = F_DataBlank
 NEXT
 
-' 给一个初始化完成信号
 n_loop = 0
 WHILE 1
     cur_group_id = n_loop MOD DataGroupNum
@@ -92,28 +135,3 @@ WHILE 1
 
     n_loop = n_loop + 1
 END
-
-' WHILE 1
-' 	FOR n_loop = 0 TO 2 STEP 1
-' 		cur_group_id = n_loop MOD DataGroupNum
-' 		data_state = MODBUS_REG(cur_group_id)
-' 		WHILE (data_state <> F_DataUpdate)
-' 			data_state = MODBUS_REG(cur_group_id)
-' 		WEND
-		
-' 		loop_start_index = Start_Index + n_loop * DataGroupSize
-' 		loop_end_index = loop_start_index + DataGroupSize - 1
-' 		FOR trace_loop = loop_start_index TO loop_end_index STEP 1
-' 			MOVE_PTABS(n_ticks, TABLE(trace_loop))
-' 		NEXT
-		
-' 		MODBUS_REG(cur_group_id) = F_DataUsed
-		
-' 	NEXT
-' WEND
-' END
-
-' Q1:总线通讯周期和伺服周期
-' Q2:
-
-

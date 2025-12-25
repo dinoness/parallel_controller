@@ -39,13 +39,22 @@ GLOBAL SUB home_single_axis()
 	
 	WAIT IDLE
 
-    '' 按照驱动器回零
-    '' DATUM(21, 0)  ' 需提前在驱动器中设置好回零模式
 
-    TABLE(0) = DRIVE_STATUS
+    ' TABLE(0) = DRIVE_STATUS
+    ' home_initstate = 0  ' 0表示回零没好
+    ' IF READ_BIT2(10, TABLE(0)) THEN
+    '     IF READ_BIT2(12, TABLE(0)) THEN
+    '         PRINT "Home Finish"
+    '         home_initstate = 1
+    '     ENDIF
+    ' ENDIF
+	' PRINT "home_initstate:"home_initstate
+
+    '' ========================不知道直接赋值给变量行不行========================
+    dim home_state = DRIVE_STATUS
     home_initstate = 0  ' 0表示回零没好
-    IF READ_BIT2(10, TABLE(0)) THEN
-        IF READ_BIT2(12, TABLE(0)) THEN
+    IF READ_BIT2(10, home_state) THEN
+        IF READ_BIT2(12, home_state) THEN
             PRINT "Home Finish"
             home_initstate = 1
         ENDIF
@@ -55,6 +64,7 @@ GLOBAL SUB home_single_axis()
 
 END SUB
 
+' 需要测试多轴回零的逻辑
 GLOBAL SUB home_robot()
     IF bus_initstate <> 1 THEN
         PRINT "总线未初始化"
@@ -63,15 +73,31 @@ GLOBAL SUB home_robot()
 
     ' === TO DO ===
     dim i_axis
-    FOR i_axis = 0 TO bus_total_axis_num
+    FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
         BASE(i_axis)
         creep = 10  ' 回零反找时的速度
         speed = 100
         accel = 1000
         decel = 1000
-        DATUM(21, 4)  ' 21总线模式，4表示具体的回零策略，可替换
+        DATUM(21, 29)  ' 21总线模式，4表示具体的回零策略，可替换
     NEXT
 
-    '' 如果有多个轴，drive_status是什么样的
+    WAIT IDLE
+
+    '' ========================如果有多个轴，drive_status是什么样的========================
+    home_initstate = 0
+    dim num_home_axis = 0
+    dim home_state
+    FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
+        home_state = DRIVE_STATUS(i_axis)
+        IF READ_BIT2(10, home_state) THEN
+            IF READ_BIT2(12, home_state) THEN
+                PRINT "Home Finish"
+                home_initstate = 1
+            ENDIF
+        ENDIF
+    NEXT
+
+    PRINT "home_initstate:"home_initstate
 
 END SUB

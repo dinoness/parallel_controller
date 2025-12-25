@@ -590,19 +590,27 @@ typedef uint32 (*PSoFrameRotateWpostoDpos)(struct_soZmcDisp *pzmc,  struct_soFra
 typedef struct str_userframeinfo
 {
     //用户正逆解全局变量
-    //臂长
-    fp64 m_flen1;
-    fp64 m_flen2;
-    fp64 m_flen3;
-    fp64 m_flen4;
-    fp64 m_flen5;
-    //....
-    //关节一圈的脉冲数
-    fp64 m_pulse1;
-    fp64 m_pulse2;
-    fp64 m_pulse3;
-    fp64 m_pulse4;
-    fp64 m_pulse5;
+    //结构参数
+    fp32 b1[3];
+    fp32 b2[3];
+    fp32 b3[3];
+    fp32 b4[3];
+    fp32 b5[3];
+    fp32 m1[3];
+    fp32 m2[3];
+    fp32 m3[3];
+    fp32 m4[3];
+    fp32 m5[3];
+
+    fp32 b[5][3];
+    fp32 m[5][3];
+
+    //关节一单位(当前：mm)的脉冲数
+    fp64 u_j1;
+    fp64 u_j2;
+    fp64 u_j3;
+    fp64 u_j4;
+    fp64 u_j5;
     //...
     //虚拟轴的unit
     fp64 m_pulsev; 
