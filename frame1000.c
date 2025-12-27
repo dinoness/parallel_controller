@@ -22,6 +22,7 @@ struct_userframeinfo g_soframeinfo[SOFRAME_FRAME_NUM] = {0};
 // 数据是从TABLE中来的
 uint32 SOFRAME_INIT1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, TYPE_TABLE* pParaList)
 {
+    rtprintf("SOFRAME_INIT1000\n");
     int16 i, j; 
     struct_userframeinfo  *pf =NULL;
 
@@ -89,7 +90,7 @@ uint32 SOFRAME_INIT1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, T
     pframe->m_pPrivate = (void *)&g_soframeinfo[0];
 
     //更新当前机械手姿态
-    pframe->m_iHand = 0;//具体用户自己编写计算机械手当前实际姿态，姿态数值含义用户自己定义，????
+    pframe->m_iHand = 0;//意思就是有多个解的时候选哪个
     
     pf = (struct_userframeinfo *)pframe->m_pPrivate; 
     if(NULL == pf)
@@ -110,6 +111,7 @@ uint32 SOFRAME_INIT1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, T
 // ihand	    输入坐标对应姿态, -1表示使用当前姿态.
 uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, TYPE_FRAME *pfWorldin, int32 ihand, TYPE_FRAME* pfJointPulseout)
 {
+    
 	int i;  
     double uw[6];
 	struct_userframeinfo  *pf = NULL;
@@ -123,11 +125,15 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     }
 
     // 2 axis test 交换位置输出
-    uw[0] = pfWorldin[0];   // 位置 x   mm
-    uw[1] = pfWorldin[1];   // 位置 y   mm
+    uw[1] = pfWorldin[0];   // 位置 x   mm
+    uw[0] = pfWorldin[1];   // 位置 y   mm
     pfJointPulseout[0] = uw[0] * g_soframeinfo->u_j1;
     pfJointPulseout[1] = uw[1] * g_soframeinfo->u_j2;
+    /*pfJointPulseout[0] = uw[0] * g_soframeinfo->u_j1;
+    pfJointPulseout[1] = uw[1] * g_soframeinfo->u_j2;*/
     
+    
+        
     // ==============================================================================
     /*
     //把世界坐标脉冲转为mm和角度  pfWorldin 已经是除以units的值了
@@ -235,16 +241,49 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     // ==============================================================================
      
     //打印输出测试
-    // if(1 == g_printflag)
-    // {
-    //     rtprintf("retrans input %.2f,%.2f,%.2f,%.2f, output ,%.2f,%.2f,%.2f,%.2f\n",uw[0],uw[1],uw[2],uw[3],pfJointPulseout[0],pfJointPulseout[1],pfJointPulseout[2],pfJointPulseout[3]);
-    //     g_printflag = 0; 
-    // }
+    if(1 == g_printflag)
+    {
+        rtprintf("SOFRAME_RETRANS1000 逆解\n");
+		rtprintf("retrans input %.6f,%.6f, output ,%.6f,%.6f\n",uw[0],uw[1],pfJointPulseout[0],pfJointPulseout[1],pfJointPulseout[2]);
+		g_printflag = 0; 
+    }
     
     return 0;
 }
 
+uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, TYPE_FRAME*pfJointPulsein, int32 *pHand, TYPE_FRAME* pfWorldout)
+{
+    rtprintf("SOFRAME_TRANS1000 正解\n");
+	int i;  
+    double uj[6];
+	
+    // 正解过程，输入关节坐标，输出关节坐标
+    // 但是这里回过零了，所以直接取0
+    struct_userframeinfo  *pf =NULL;
+	pf = (struct_userframeinfo *)pframe->m_pPrivate;
+    
+    if(NULL == pf)
+    {
+        return -1;
+    }
 
+	uj[0] = *(pfJointPulsein + 0) / pf->u_j1 ;
+    uj[1] = *(pfJointPulsein + 1) / pf->u_j2 ;
+    
+    pfWorldout[0] = 0;
+    pfWorldout[1] = 0;
+
+    
+    //打印输出测试 
+    if(0 == g_printflag)
+    {
+        rtprintf("SOFRAME_TRANS1000 正解\n");
+        rtprintf("trans input %.6f,%.6f, output ,%.6f,%.6f\n",uj[0],uj[1],pfWorldout[0],pfWorldout[1],pfWorldout[2]);
+        g_printflag = 1;
+    }
+    
+    return 0;
+}
 
 
 

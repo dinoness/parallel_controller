@@ -28,13 +28,13 @@ GLOBAL SUB home_single_axis()
     ENDIF
 
     BASE(0)
-    creep = 50  ' 回零反找时的速度
-    speed = 100
-    accel = 1000
-    decel = 1000
+    creep = 1  ' 回零反找时的速度
+    speed = 3
+    accel = 10
+    decel = 10
     
     '' 按照控制器回零
-    DATUM(21, 17)  ' 21总线模式，29表示具体的回零策略，依据6098h的设定值填写
+    DATUM(21, 29)  ' 21总线模式，29表示具体的回零策略，依据6098h的设定值填写
 	'' 17，以负限位作为停止点
 	
 	WAIT IDLE
@@ -51,10 +51,10 @@ GLOBAL SUB home_single_axis()
 	' PRINT "home_initstate:"home_initstate
 
     '' ========================不知道直接赋值给变量行不行========================
-    dim home_state = DRIVE_STATUS
+    TABLE(500) = DRIVE_STATUS
     home_initstate = 0  ' 0表示回零没好
-    IF READ_BIT2(10, home_state) THEN
-        IF READ_BIT2(12, home_state) THEN
+    IF READ_BIT2(10, TABLE(500)) THEN
+        IF READ_BIT2(12, TABLE(500)) THEN
             PRINT "Home Finish"
             home_initstate = 1
         ENDIF
@@ -75,23 +75,24 @@ GLOBAL SUB home_robot()
     dim i_axis
     FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
         BASE(i_axis)
-        creep = 10  ' 回零反找时的速度
-        speed = 100
-        accel = 1000
-        decel = 1000
-        DATUM(21, 29)  ' 21总线模式，4表示具体的回零策略，可替换
+        creep = 1  ' 回零反找时的速度
+        speed = 3
+        accel = 10
+        decel = 10
+        DATUM(21, 29)
     NEXT
 
     WAIT IDLE
 
     '' ========================如果有多个轴，drive_status是什么样的========================
+	'' ========================下面这段代码好像没什么用========================
     home_initstate = 0
-    dim num_home_axis = 0
+    'dim num_home_axis = 0
     dim home_state
     FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
-        home_state = DRIVE_STATUS(i_axis)
-        IF READ_BIT2(10, home_state) THEN
-            IF READ_BIT2(12, home_state) THEN
+        TABLE(500) = DRIVE_STATUS(i_axis)
+        IF READ_BIT2(10, TABLE(500)) THEN
+            IF READ_BIT2(12, TABLE(500)) THEN
                 PRINT "Home Finish"
                 home_initstate = 1
             ENDIF

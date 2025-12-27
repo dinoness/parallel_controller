@@ -24,6 +24,7 @@ float vec3_length(const vec3* v);
 float vec3_dot(const vec3* v1, const vec3* v2);
 vec3* vec3_mult_v(vec3* left, float v);
 vec3* vec3_mult_v_copy(vec3* out, const vec3* left, float v);
+vec3* vec3_mult_v3_copy(vec3* out, const vec3* left, const vec3* right);
 vec3* vec3_cross(vec3* left, const vec3* right);
 vec3* vec3_cross_copy(vec3* out, const vec3* left, const vec3* right);
 vec3* vec3_add(vec3* left, const vec3* right);

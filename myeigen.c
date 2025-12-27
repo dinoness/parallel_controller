@@ -1,5 +1,5 @@
 #include "myeigen.h"
-#include <math.h>
+#include "zmcbuildin.h"
 static float mysqrt(float v)
 {
     return sqrt(v);
@@ -27,6 +27,14 @@ float vec3_dot(const vec3* v1, const vec3* v2)
     vec3 out;
     vec3_mult_v3_copy(&out, v1, v2);
     return out.x + out.y + out.z;
+}
+
+vec3* vec3_mult_v3_copy(vec3* out, const vec3* left, const vec3* right)
+{
+    out->x = left->x * right->x;
+    out->y = left->y * right->y;
+    out->z = left->z * right->z;
+    return out;
 }
 
 float vec3_length(const vec3* v)
