@@ -125,29 +125,26 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     }
 
     // 2 axis test 交换位置输出
-    uw[1] = pfWorldin[0];   // 位置 x   mm
-    uw[0] = pfWorldin[1];   // 位置 y   mm
-    pfJointPulseout[0] = uw[0] * g_soframeinfo->u_j1;
-    pfJointPulseout[1] = uw[1] * g_soframeinfo->u_j2;
-    /*pfJointPulseout[0] = uw[0] * g_soframeinfo->u_j1;
-    pfJointPulseout[1] = uw[1] * g_soframeinfo->u_j2;*/
+    // uw[1] = pfWorldin[0];   // 位置 x   mm
+    // uw[0] = pfWorldin[1];   // 位置 y   mm
+    // pfJointPulseout[0] = uw[0] * g_soframeinfo->u_j1;
+    // pfJointPulseout[1] = uw[1] * g_soframeinfo->u_j2;
     
     
-        
+    // 旋转支链最短690mm(+350mm)
+    // 其他支链最短686.22mm(+350mm)
     // ==============================================================================
-    /*
-    //把世界坐标脉冲转为mm和角度  pfWorldin 已经是除以units的值了
-    uw[0] = pfWorldin[0];   // 位置 x   mm
-    uw[1] = pfWorldin[1];   // 位置 y   mm
-    uw[2] = pfWorldin[2];   // 位置 z   mm
+    
+    //把世界坐标脉冲转为um和角度  pfWorldin 已经是除以units的值了
+    uw[0] = pfWorldin[0];   // 位置 x   um
+    uw[1] = pfWorldin[1];   // 位置 y   um
+    uw[2] = pfWorldin[2];   // 位置 z   um
     uw[3] = pfWorldin[3];   // 位置 phi 弧度 
     uw[4] = pfWorldin[4];   // 位置 theta 弧度
-    // uw[5] = pfWorldin[5];
 
     //转弧度
     uw[3] = radians(uw[3]);
     uw[4] = radians(uw[4]);
-    // uw[5] = uw[5] / 180 *PI;
     
     //逆解过程
     // double B1Ob[3];
@@ -217,27 +214,13 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
         l_limb[i_axis] = vec3_length(&(v_limb[i_axis]));
     }
 
-    // for(i = 0; i < 3; i++)
-    // {
-    //     // B1Ob[i] = uw[i] - g_soframeinfo->b[0][i];
-    // }
-
-    // 动平台z轴
-    // R_plant[0][2] = sin(uw[4])*cos(uw[3]);
-    // R_plant[1][2] = sin(uw[4])*sin(uw[3]);
-    // R_plant[2][2] = cos(uw[4]);
-
-    // R_plant.m[2][0] = sin(uw[4])*cos(uw[3]);
-    // R_plant.m[2][1] = sin(uw[4])*sin(uw[3]);
-    // R_plant.m[2][2] = cos(uw[4]);
-
     // 转化为脉冲数
     pfJointPulseout[0] = l_limb[0] * g_soframeinfo->u_j1;
     pfJointPulseout[1] = l_limb[1] * g_soframeinfo->u_j2;
     pfJointPulseout[2] = l_limb[2] * g_soframeinfo->u_j3;
     pfJointPulseout[3] = l_limb[3] * g_soframeinfo->u_j4;
     pfJointPulseout[4] = l_limb[4] * g_soframeinfo->u_j5;
-    */
+    
     // ==============================================================================
      
     //打印输出测试
@@ -267,11 +250,15 @@ uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, 
         return -1;
     }
 
-	uj[0] = *(pfJointPulsein + 0) / pf->u_j1 ;
-    uj[1] = *(pfJointPulsein + 1) / pf->u_j2 ;
+	// uj[0] = *(pfJointPulsein + 0) / pf->u_j1;
+    // uj[1] = *(pfJointPulsein + 1) / pf->u_j2;
     
-    pfWorldout[0] = 0;
-    pfWorldout[1] = 0;
+    // 必须先回零
+    pfWorldout[0] = 0;  // x
+    pfWorldout[1] = 0;  // y
+    pfWorldout[2] = -555 * 1000;  // z
+    pfWorldout[3] = 0;  // theta
+    pfWorldout[4] = 0;  // phi
 
     
     //打印输出测试 

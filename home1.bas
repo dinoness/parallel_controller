@@ -16,7 +16,7 @@
 '' Q1:6000h组参数修改
 '' A1:6098h直接通过DATUM指令的Mode2设置
 '' Q2:Z信号设置
-'' A2:
+'' A2:编码器的每圈的零值为Z信号
 '' Q3:使用29模式回零时，在遇到负限位时，驱动器会直接报错E630.0，而不会转变成正向运动。其中运动指令时通过控制器发送的
 '' A3:因为传感器安装在了机械限制外
 
@@ -28,10 +28,10 @@ GLOBAL SUB home_single_axis()
     ENDIF
 
     BASE(0)
-    creep = 1  ' 回零反找时的速度
-    speed = 3
-    accel = 10
-    decel = 10
+    creep = 1 * LENGTH_UNIT  ' 回零反找时的速度
+    speed = 3 * LENGTH_UNIT
+    accel = 10 * LENGTH_UNIT
+    decel = 10 * LENGTH_UNIT
     
     '' 按照控制器回零
     DATUM(21, 29)  ' 21总线模式，29表示具体的回零策略，依据6098h的设定值填写
@@ -75,16 +75,15 @@ GLOBAL SUB home_robot()
     dim i_axis
     FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
         BASE(i_axis)
-        creep = 1  ' 回零反找时的速度
-        speed = 3
-        accel = 10
-        decel = 10
+        creep = 1 * LENGTH_UNIT  ' 回零反找时的速度
+        speed = 3 * LENGTH_UNIT
+        accel = 10 * LENGTH_UNIT
+        decel = 10 * LENGTH_UNIT
         DATUM(21, 29)
     NEXT
 
     WAIT IDLE
 
-    '' ========================如果有多个轴，drive_status是什么样的========================
 	'' ========================下面这段代码好像没什么用========================
     home_initstate = 0
     'dim num_home_axis = 0

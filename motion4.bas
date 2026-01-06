@@ -23,6 +23,7 @@ GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
 GLOBAL home_initstate  ' 回零操作
 GLOBAL CONST ROBO_PARA_START_ID = 0  ' 参数起始id
+GLOBAL CONST LENGTH_UNIT = 1000 ' 长度单位转化，1代表mm，1000代表um
 
 bus_initstate = -1
 home_initstate = -1
@@ -34,7 +35,7 @@ WHILE (bus_initstate = 0)
     Ecat_Init()
 WEND
 
-CONST PB = 5  ' mm，丝杠导程
+CONST PB = 5 * LENGTH_UNIT  ' um，丝杠导程
 CONST ENCODER_PER_ROE = 8388608  ' 2^23
 
 dim u_j1
@@ -44,11 +45,11 @@ dim u_j4
 dim u_j5
 
 
-u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1mm脉冲数
-u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1mm脉冲数
-u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1mm脉冲数
-u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1mm脉冲数 
-u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1mm脉冲数  ' ============UNIT为1mm============
+u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1um脉冲数
+u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1um脉冲数
+u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1um脉冲数
+u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1um脉冲数 
+u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1um脉冲数  ' ============UNIT为1um============
 
 '' ==========  定义几何尺寸  ==========
 rob_para_config1(5)
@@ -68,14 +69,14 @@ IF home_initstate = 0 THEN
 ENDIF
 
 dpos=0,0  '设置关节轴的位置
-speed=5,5
-accel=10,10
-decel=10,10
+speed=5 * LENGTH_UNIT, 5 * LENGTH_UNIT
+accel=10 * LENGTH_UNIT, 10 * LENGTH_UNIT
+decel=10 * LENGTH_UNIT, 10 * LENGTH_UNIT
 
 '' 虚拟轴设置
 BASE(6,7)
 atype = 0,0  ' 取0设置为虚拟轴
-speed = 5,5  
+speed = 5  * LENGTH_UNIT, 5 * LENGTH_UNIT
 UNITS= 1,1   '运动精度，要提前设置，中途不能变化
 
 TABLE(ROBO_PARA_START_ID,u_j1,u_j2,u_j3,u_j4,u_j5)  ' 将参数写入到TABLE中，这样C配置文件中会读取对应的参数，第一个参数是指数据的起始位置，尺寸数据已通过rob_para_config1写入

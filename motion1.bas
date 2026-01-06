@@ -8,6 +8,7 @@ GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
 GLOBAL home_initstate  ' 回零操作
 GLOBAL CONST ROBO_PARA_START_ID = 0  ' 参数起始id
+GLOBAL CONST LENGTH_UNIT = 1000  ' 长度单位转化，1代表mm，1000代表um
 
 bus_initstate = -1
 home_initstate = -1
@@ -24,14 +25,14 @@ WEND
 '' ==========     配置/初始化部分     ==========
 '' ============================================
 '' ==========  设置电机参数  ==========
-CONST PB = 5  ' mm，丝杠导程
+CONST PB = 5 * LENGTH_UNIT  ' 丝杠导程
 CONST ENCODER_PER_ROE = 8388608  ' 2^23
 
-dim u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1mm脉冲数
-dim u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1mm脉冲数
-dim u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1mm脉冲数
-dim u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1mm脉冲数 
-dim u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1mm脉冲数 
+DIM u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1mm or um脉冲数
+DIM u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1mm or um脉冲数
+DIM u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1mm or um脉冲数
+DIM u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1mm or um脉冲数 
+DIM u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1mm or um脉冲数 
 ' UNITS为指定运行一个单位需要的脉冲数，之后所有的运动指令都以此为单位
 ' 经过实测，电机运行一圈的脉冲数就是编码器一圈的数值，前提是驱动器中没有设置电子齿轮
 ' 不仅是脉冲轴，总线轴也要设置UNITS
@@ -58,20 +59,17 @@ IF home_initstate = 0 THEN
 ENDIF
 
 
-dpos=0,0,0,0,0  '设置关节轴的位置
-speed=100,100,100,100,100
-accel=1000,1000,1000,1000,1000
-decel=1000,1000,1000,1000,1000
+dpos = 0,0,0,0,0  '设置关节轴的位置
+speed = 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT
+accel = 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT
+decel = 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT
 
 
 '' 虚拟轴设置
 BASE(6,7,8,9,10)
 atype = 0,0,0,0,0  ' 取0设置为虚拟轴
-speed = 100,100,100,100,100  ' =====================虚拟轴的单位是什么意思??=====================
-' =====================整个两轴的试试??=====================
-UNITS= 1000,1000,1000,1000,1000         '运动精度，要提前设置，中途不能变化
-
-''======================== TO DO 配合C文件写入参数========================''
+speed = 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT
+UNITS= 1,1,1,1,1         '运动精度，要提前设置，中途不能变化
 TABLE(ROBO_PARA_START_ID,u_j1,u_j2,u_j3,u_j4,u_j5)  ' 将参数写入到TABLE中，这样C配置文件中会读取对应的参数，第一个参数是指数据的起始位置
 
 
@@ -87,20 +85,92 @@ MERGE = ON
 
 '' 逆解模式
 BASE(0,1,2,3,4)
-CONNFRAME(1000,robo_para_start_id,6,7,8,9,10,11)
+CONNFRAME(1000,robo_para_start_id,6,7,8,9,10)
 WAIT LOADED  '' 等待加载完成
 
 
 '' ============================================
 '' ==========        运动部分        ==========
 '' ============================================
-'' 逆解状态下，只要move虚拟轴就可以了？
-
-
 BASE(6,7,8,9,10,11)  ' 控制虚拟轴
-''======================== TO DO 接收上位机发来的数据，并使用MOVE等运动指令========================''
+
+
+DIM n_loop  '总循环次数
+DIM data_state  ' 数据状态
+DIM cur_group_id  ' 当前的缓冲数据组
+DIM i_loop  ' 循环变量
+CONST CmdSize = 7  ' 一条指令的数据个数
+CONST DataGroupNum = 10  ' 数据块缓冲数
+CONST DataGroupSize = 100  ' 数据块中的数据数
+CONST DataBlockSize = DataGroupSize*CmdSize  ' 一个缓冲块中的数据总数
+
+' State flag of data
+CONST F_DataUpdate = 1
+CONST F_DataUsed = 2
+CONST F_DataBlank = 3
+' Table index
+CONST Start_Index = 1000
+DIM loop_start_index
+DIM loop_end_index
+' Motion parameters
+DIM cmd_id
+CONST n_ticks = 100  
+
+FOR n_loop = 0 TO (DataGroupNum - 1) STEP 1
+	MODBUS_REG(n_loop) = F_DataBlank
+NEXT
+
+
+PRINT "Go into loop."
+n_loop = 0
+'' 接收上位机发来的数据，并执行''
+WHILE 1
+    cur_group_id = n_loop MOD DataGroupNum
+    data_state = MODBUS_REG(cur_group_id)
+	' PRINT "cur_group_id = " cur_group_id
+	' PRINT "data_state = "data_state
+	
+    WHILE (data_state <> F_DataUpdate)
+		data_state = MODBUS_REG(cur_group_id)
+	WEND
+
+    loop_start_index = Start_Index + cur_group_id * DataBlockSize
+    loop_end_index = loop_start_index + DataBlockSize - 1
+	'PRINT "loop_start_index" loop_start_index
+
+	i_loop = loop_start_index
+	WHILE i_loop < loop_end_index
+        cmd_id = TABLE(i_loop)
+
+        ' TABLE内容查看建议通过RTSys查看
+        IF cmd_id = 1 THEN
+            MOVE(TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
+			WAIT IDLE
+            'PRINT "MOVE"
+        ELSEIF cmd_id = 2 THEN
+            MOVEABS(TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
+			WAIT IDLE
+            'PRINT "MOVEABS"
+        ELSEIF cmd_id = 10 THEN
+            MOVE_PTABS(TABLE(i_loop+6),TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
+            'PRINT "MOVE_PTABS"
+        ELSE
+            'RAPIDSTOP(1)
+			PRINT "Motion stopped."
+        ENDIF
+
+        i_loop = i_loop + CmdSize  ' 移到下一条指令
+    WEND
+
+	'PRINT *DPOS
+
+    n_loop = n_loop + 1  ' 记录循环次数
+WEND
 
 
 
-''======================== TO DO 驱动器模式设置========================''
+PRINT "Motion1 Over."
+END
+
+
 ' DRIVE_TORQUE 获取驱动器力矩
