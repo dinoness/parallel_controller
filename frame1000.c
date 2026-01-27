@@ -48,43 +48,20 @@ uint32 SOFRAME_INIT1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, T
         }
     }
 
-    // g_soframeinfo[0].b1[0] = *(pParaList + 5);
-    // g_soframeinfo[0].b1[1] = *(pParaList + 6);
-    // g_soframeinfo[0].b1[2] = *(pParaList + 7);
-    // g_soframeinfo[0].b2[0] = *(pParaList + 8);
-    // g_soframeinfo[0].b2[1] = *(pParaList + 9);
-    // g_soframeinfo[0].b2[2] = *(pParaList + 10);
-    // g_soframeinfo[0].b3[0] = *(pParaList + 11);
-    // g_soframeinfo[0].b3[1] = *(pParaList + 12);
-    // g_soframeinfo[0].b3[2] = *(pParaList + 13);
-    // g_soframeinfo[0].b4[0] = *(pParaList + 14);
-    // g_soframeinfo[0].b4[1] = *(pParaList + 15);
-    // g_soframeinfo[0].b4[2] = *(pParaList + 16);
-    // g_soframeinfo[0].b5[0] = *(pParaList + 17);
-    // g_soframeinfo[0].b5[1] = *(pParaList + 18);
-    // g_soframeinfo[0].b5[2] = *(pParaList + 19);
+    for(i = 0; i < 5; i++)
+    {
+        g_soframeinfo[0].limb0[i] = *(pParaList + 35 + i);
+    }
 
-    // g_soframeinfo[0].m1[0] = *(pParaList + 20);
-    // g_soframeinfo[0].m1[1] = *(pParaList + 21);
-    // g_soframeinfo[0].m1[2] = *(pParaList + 22);
-    // g_soframeinfo[0].m2[0] = *(pParaList + 23);
-    // g_soframeinfo[0].m2[1] = *(pParaList + 24);
-    // g_soframeinfo[0].m2[2] = *(pParaList + 25);
-    // g_soframeinfo[0].m3[0] = *(pParaList + 26);
-    // g_soframeinfo[0].m3[1] = *(pParaList + 27);
-    // g_soframeinfo[0].m3[2] = *(pParaList + 28);
-    // g_soframeinfo[0].m4[0] = *(pParaList + 29);
-    // g_soframeinfo[0].m4[1] = *(pParaList + 30);
-    // g_soframeinfo[0].m4[2] = *(pParaList + 31);
-    // g_soframeinfo[0].m5[0] = *(pParaList + 32);
-    // g_soframeinfo[0].m5[1] = *(pParaList + 33);
-    // g_soframeinfo[0].m5[2] = *(pParaList + 34);
-
+    g_soframeinfo[0].LENGTH_UNIT = *(pParaList + 40);
 
     for(i = 0; i < SOFRAME_TABLE_NUM; i++)
 	{
 		g_soframeinfo[0].m_table[i] = pParaList[i];
 	}
+
+    
+
 
     // 存储 每次init都需要
     pframe->m_pPrivate = (void *)&g_soframeinfo[0];
@@ -139,12 +116,13 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     uw[0] = pfWorldin[0];   // 位置 x   um
     uw[1] = pfWorldin[1];   // 位置 y   um
     uw[2] = pfWorldin[2];   // 位置 z   um
-    uw[3] = pfWorldin[3];   // 位置 phi 弧度 
-    uw[4] = pfWorldin[4];   // 位置 theta 弧度
+    uw[3] = pfWorldin[3];   // 位置 phi 弧度  动平台z轴和世界坐标z轴的夹角
+    uw[4] = pfWorldin[4];   // 位置 theta 弧度  动平台z轴在世界坐标xoy平面投影线和世界坐标x轴夹角
 
     //转弧度
     uw[3] = radians(uw[3]);
     uw[4] = radians(uw[4]);
+
     
     //逆解过程
     // double B1Ob[3];
@@ -161,6 +139,7 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     vec3 v_limb[5];  // 支链向量
     vec3 s_limb[5];  // 支链向量归一化
     float l_limb[5];  // 支链长度
+    fp32 l_limb0[5];  // 直连初始长度
 
     for(int i_axis = 0; i_axis < 5; i_axis++)
     {
@@ -173,6 +152,7 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
         M[i_axis].y = g_soframeinfo->m[i_axis][1];
         M[i_axis].z = g_soframeinfo->m[i_axis][2];
         
+        l_limb0[i_axis] = g_soframeinfo->limb0[i_axis];        
     }
     
     v_plant.x = uw[0];
@@ -215,20 +195,27 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     }
 
     // 转化为脉冲数
-    pfJointPulseout[0] = l_limb[0] * g_soframeinfo->u_j1;
-    pfJointPulseout[1] = l_limb[1] * g_soframeinfo->u_j2;
-    pfJointPulseout[2] = l_limb[2] * g_soframeinfo->u_j3;
-    pfJointPulseout[3] = l_limb[3] * g_soframeinfo->u_j4;
-    pfJointPulseout[4] = l_limb[4] * g_soframeinfo->u_j5;
-    
-    // ==============================================================================
-     
+    pfJointPulseout[0] = (l_limb[0] - l_limb0[0]) * g_soframeinfo->u_j1;
+    pfJointPulseout[1] = (l_limb[1] - l_limb0[1]) * g_soframeinfo->u_j2;
+    pfJointPulseout[2] = (l_limb[2] - l_limb0[2]) * g_soframeinfo->u_j3;
+    pfJointPulseout[3] = (l_limb[3] - l_limb0[3]) * g_soframeinfo->u_j4;
+    pfJointPulseout[4] = (l_limb[4] - l_limb0[4]) * g_soframeinfo->u_j5;
+    // 检查代码时用
+    // pfJointPulseout[0] = 0 * g_soframeinfo->u_j1;
+    // pfJointPulseout[1] = 0 * g_soframeinfo->u_j2;
+    // pfJointPulseout[2] = 0 * g_soframeinfo->u_j3;
+    // pfJointPulseout[3] = 0 * g_soframeinfo->u_j4;
+    // pfJointPulseout[4] = 0 * g_soframeinfo->u_j5;
+
+
     //打印输出测试
     if(1 == g_printflag)
     {
         rtprintf("SOFRAME_RETRANS1000 逆解\n");
-		rtprintf("retrans input %.6f,%.6f, output ,%.6f,%.6f\n",uw[0],uw[1],pfJointPulseout[0],pfJointPulseout[1],pfJointPulseout[2]);
-		g_printflag = 0; 
+		rtprintf("retrans input %.6f,%.6f,%.6f,%.6f,%.6f\n",uw[0],uw[1],uw[2],uw[3],uw[4]);
+		rtprintf("retrans output %.6f,%.6f,%.6f,%.6f,%.6f\n",pfJointPulseout[0], pfJointPulseout[1], pfJointPulseout[2], pfJointPulseout[3], pfJointPulseout[4]);
+        rtprintf("limb length %.10f,%.10f,%.10f,%.10f,%.10f\n",l_limb[0], l_limb[1], l_limb[2], l_limb[3], l_limb[4]);
+        g_printflag = 0; 
     }
     
     return 0;
@@ -236,7 +223,6 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
 
 uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, TYPE_FRAME*pfJointPulsein, int32 *pHand, TYPE_FRAME* pfWorldout)
 {
-    rtprintf("SOFRAME_TRANS1000 正解\n");
 	int i;  
     double uj[6];
 	
@@ -244,6 +230,8 @@ uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, 
     // 但是这里回过零了，所以直接取0
     struct_userframeinfo  *pf =NULL;
 	pf = (struct_userframeinfo *)pframe->m_pPrivate;
+
+    fp32 LENGTH_UNIT = g_soframeinfo[0].LENGTH_UNIT;
     
     if(NULL == pf)
     {
@@ -253,19 +241,26 @@ uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, 
 	// uj[0] = *(pfJointPulsein + 0) / pf->u_j1;
     // uj[1] = *(pfJointPulsein + 1) / pf->u_j2;
     
-    // 必须先回零
+    // 必须先回零=================================================================
     pfWorldout[0] = 0;  // x
     pfWorldout[1] = 0;  // y
-    pfWorldout[2] = -555 * 1000;  // z
+    pfWorldout[2] = -555 * LENGTH_UNIT;  // z
     pfWorldout[3] = 0;  // theta
     pfWorldout[4] = 0;  // phi
+
+    // pfWorldout[0] = 0;  // x
+    // pfWorldout[1] = 0;  // y
+    // pfWorldout[2] = 0;  // z
+    // pfWorldout[3] = 0;  // theta
+    // pfWorldout[4] = 0;  // phi
+    // =================================================================
 
     
     //打印输出测试 
     if(0 == g_printflag)
     {
         rtprintf("SOFRAME_TRANS1000 正解\n");
-        rtprintf("trans input %.6f,%.6f, output ,%.6f,%.6f\n",uj[0],uj[1],pfWorldout[0],pfWorldout[1],pfWorldout[2]);
+        rtprintf("trans input %.6f,%.6f,%.6f,%.6f,%.6f\n output ,%.6f,%.6f,%.6f,%.6f,%.6f\n",uj[0],uj[1],uj[2],uj[3],uj[4],pfWorldout[0],pfWorldout[1],pfWorldout[2],pfWorldout[3],pfWorldout[4]);
         g_printflag = 1;
     }
     

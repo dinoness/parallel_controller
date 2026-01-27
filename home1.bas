@@ -71,17 +71,32 @@ GLOBAL SUB home_robot()
         END SUB
     ENDIF
 
-    ' === TO DO ===
+    IF bus_total_axis_num <> 5 THEN
+        PRINT "轴数不为5"
+        home_initstate = 0
+        END SUB
+    ENDIF
+
     dim i_axis
-    FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
+    FOR i_axis = 0 TO 2 STEP 1
         BASE(i_axis)
         creep = 1 * LENGTH_UNIT  ' 回零反找时的速度
         speed = 3 * LENGTH_UNIT
         accel = 10 * LENGTH_UNIT
         decel = 10 * LENGTH_UNIT
-        DATUM(21, 29)
+        DATUM(21, 29)  ' 29
     NEXT
 
+	FOR i_axis = 3 TO 4 STEP 1
+		BASE(i_axis)
+		creep = 1 * LENGTH_UNIT  ' 回零反找时的速度
+		speed = 3 * LENGTH_UNIT
+		accel = 10 * LENGTH_UNIT
+		decel = 10 * LENGTH_UNIT
+		DATUM(21, 17)
+	NEXT
+
+    
     WAIT IDLE
 
 	'' ========================下面这段代码好像没什么用========================

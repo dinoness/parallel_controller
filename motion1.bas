@@ -8,7 +8,7 @@ GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
 GLOBAL home_initstate  ' 回零操作
 GLOBAL CONST ROBO_PARA_START_ID = 0  ' 参数起始id
-GLOBAL CONST LENGTH_UNIT = 1000  ' 长度单位转化，1代表mm，1000代表um
+GLOBAL CONST LENGTH_UNIT = 1  ' 长度单位转化，1代表mm，1000代表um
 
 bus_initstate = -1
 home_initstate = -1
@@ -28,18 +28,23 @@ WEND
 CONST PB = 5 * LENGTH_UNIT  ' 丝杠导程
 CONST ENCODER_PER_ROE = 8388608  ' 2^23
 
-DIM u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1mm or um脉冲数
-DIM u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1mm or um脉冲数
-DIM u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1mm or um脉冲数
-DIM u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1mm or um脉冲数 
-DIM u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1mm or um脉冲数 
+DIM u_j1
+DIM u_j2
+DIM u_j3
+DIM u_j4
+DIM u_j5
+u_j1 =  ENCODER_PER_ROE / PB  ' 关节1实际1mm or um脉冲数
+u_j2 =  ENCODER_PER_ROE / PB  ' 关节2实际1mm or um脉冲数
+u_j3 =  ENCODER_PER_ROE / PB  ' 关节3实际1mm or um脉冲数
+u_j4 =  ENCODER_PER_ROE / PB  ' 关节4实际1mm or um脉冲数 
+u_j5 =  ENCODER_PER_ROE / PB  ' 关节5实际1mm or um脉冲数 
 ' UNITS为指定运行一个单位需要的脉冲数，之后所有的运动指令都以此为单位
 ' 经过实测，电机运行一圈的脉冲数就是编码器一圈的数值，前提是驱动器中没有设置电子齿轮
 ' 不仅是脉冲轴，总线轴也要设置UNITS
 
 
 '' ==========  定义几何尺寸  ==========
-rob_para_config1(ROBO_PARA_START_ID, BUS_NODE_NUM)
+rob_para_config1(bus_total_axis_num)
 
 
 '' ==========  定义机械手  ==========
@@ -60,6 +65,7 @@ ENDIF
 
 
 dpos = 0,0,0,0,0  '设置关节轴的位置
+'dpos=714.510315 * LENGTH_UNIT, 714.510315 * LENGTH_UNIT, 714.510315 * LENGTH_UNIT, 688.058838 * LENGTH_UNIT, 688.058838 * LENGTH_UNIT
 speed = 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT, 5 * LENGTH_UNIT
 accel = 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT
 decel = 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT, 10 * LENGTH_UNIT
@@ -82,8 +88,8 @@ MERGE = ON
 ' STOP_ANGLE = 45 * (PI / 180)
 
 
-
-'' 逆解模式
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' 逆解模式
 BASE(0,1,2,3,4)
 CONNFRAME(1000,robo_para_start_id,6,7,8,9,10)
 WAIT LOADED  '' 等待加载完成
@@ -92,7 +98,7 @@ WAIT LOADED  '' 等待加载完成
 '' ============================================
 '' ==========        运动部分        ==========
 '' ============================================
-BASE(6,7,8,9,10,11)  ' 控制虚拟轴
+BASE(6,7,8,9,10)  ' 控制虚拟轴
 
 
 DIM n_loop  '总循环次数
@@ -120,22 +126,20 @@ FOR n_loop = 0 TO (DataGroupNum - 1) STEP 1
 	MODBUS_REG(n_loop) = F_DataBlank
 NEXT
 
-
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 PRINT "Go into loop."
 n_loop = 0
 '' 接收上位机发来的数据，并执行''
 WHILE 1
-    cur_group_id = n_loop MOD DataGroupNum
-    data_state = MODBUS_REG(cur_group_id)
-	' PRINT "cur_group_id = " cur_group_id
-	' PRINT "data_state = "data_state
+   cur_group_id = n_loop MOD DataGroupNum
+   data_state = MODBUS_REG(cur_group_id)
 	
     WHILE (data_state <> F_DataUpdate)
 		data_state = MODBUS_REG(cur_group_id)
 	WEND
 
-    loop_start_index = Start_Index + cur_group_id * DataBlockSize
-    loop_end_index = loop_start_index + DataBlockSize - 1
+   loop_start_index = Start_Index + cur_group_id * DataBlockSize
+   loop_end_index = loop_start_index + DataBlockSize - 1
 	'PRINT "loop_start_index" loop_start_index
 
 	i_loop = loop_start_index
@@ -157,18 +161,23 @@ WHILE 1
         ELSE
             'RAPIDSTOP(1)
 			PRINT "Motion stopped."
-        ENDIF
+       ENDIF
 
         i_loop = i_loop + CmdSize  ' 移到下一条指令
     WEND
+
+    MODBUS_REG(cur_group_id) = F_DataUsed
 
 	'PRINT *DPOS
 
     n_loop = n_loop + 1  ' 记录循环次数
 WEND
-
-
-
+'BASE(0,1,2,3,4)
+'MOVE(10000,30000,50000,70000,90000)
+' MOVEABS(0,30*LENGTH_UNIT,-600*LENGTH_UNIT,0,0)
+' WAIT IDLE
+' MOVE_PTABS(50,0.1*LENGTH_UNIT,30.1*LENGTH_UNIT,-600*LENGTH_UNIT,0,0)
+' ?*DPOS
 PRINT "Motion1 Over."
 END
 
