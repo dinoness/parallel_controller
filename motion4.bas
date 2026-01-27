@@ -17,7 +17,7 @@
 DELAY(3000)  '等待驱动器设备上电完成
 PRINT "总线通讯周期：",SERVO_PERIOD,"us"  ' 也叫伺服周期
 
-GLOBAL CONST BUS_NODE_NUM = 2  ' 期望连接的设备数
+GLOBAL CONST BUS_NODE_NUM = 3  ' 期望连接的设备数
 GLOBAL CONST BUS_SLOT = 0  ' 槽位号，默认0
 GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
@@ -58,9 +58,9 @@ rob_para_config1(5)
 DEFINE_CFRAME  1000,BUS_NODE_NUM,0,0,0    'framenum, totalaxises, axises_aux,  max_attitudes,  rotatetype
 
 '' ==========  设置关节轴  ==========
-BASE(0,1)
+BASE(0,1,2)
 ' ATYPE在总线初始化时就设置
-UNITS = u_j1, u_j2
+UNITS = u_j1, u_j2, u_j3
 
 '' ==========  回零位  ==========
 home_robot()
@@ -204,6 +204,7 @@ WHILE 1
     n_loop = n_loop + 1
 	'EXIT WHILE
 WEND
+
 PRINT "Motion4 Over."
 
 END

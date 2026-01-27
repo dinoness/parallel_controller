@@ -604,6 +604,7 @@ typedef struct str_userframeinfo
 
     fp32 b[5][3];
     fp32 m[5][3];
+    fp32 limb0[5];
 
     //关节一单位(当前：mm)的脉冲数
     fp64 u_j1;
@@ -611,7 +612,8 @@ typedef struct str_userframeinfo
     fp64 u_j3;
     fp64 u_j4;
     fp64 u_j5;
-    //...
+    // 尺寸系数
+    fp32 LENGTH_UNIT;
     //虚拟轴的unit
     fp64 m_pulsev; 
 
