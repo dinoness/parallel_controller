@@ -1,0 +1,77 @@
+GLOBAL SUB GLOBAL_DEF()
+    ' system_state
+    GLOBAL CONST SYS_BOOT = 0
+    GLOBAL CONST SYS_BUS_INIT = 1
+    GLOBAL CONST SYS_SERVO_READY = 2
+    CONST SYS_HOMING = 3
+    CONST SYS_READY = 4  ' 已回零，可运动
+    CONST SYS_RUNNING = 5
+    CONST SYS_PAUSED = 6
+    CONST SYS_ERROR = 8
+    CONST SYS_ESTOP = 9  ' 急停
+
+    ' event id(事件)
+    CONST EVENT_IDLE         = 0
+    CONST EVENT_HOME         = 1
+    CONST EVENT_HOME_DONE    = 2
+    CONST EVENT_JOINT        = 3
+    CONST EVENT_JOINT_DONE   = 4
+    CONST EVENT_CART_JOG     = 5
+    CONST EVENT_CART_JOG_DONE= 6
+    CONST EVENT_TRAJ         = 7
+    CONST EVENT_TRAJ_DONE    = 8
+    CONST EVENT_STOP         = 9
+    CONST EVENT_ERROR_RESET  = 10
+
+    ' motion_mode
+    CONST MODE_IDLE = 0  ' 空闲
+    CONST MODE_JOINT_MANUAL = 1  ' 手动控制
+    CONST MODE_HOME = 2
+    CONST MODE_CART_JOG = 3  ' 笛卡尔方向点动
+    CONST MODE_TRAJECTORY = 4
+    CONST MODE_SENSOR_CLOSED = 5
+
+    ' cmd_id
+    CONST CMD_NONE = 0  ' 无命令
+    CONST CMD_JOINT_MOVE_REL = 1  ' 单轴相对移动
+    CONST CMD_JOINT_MOVE_ABS = 2
+    CONST CMD_JOINT_JOG_START = 3  ' 单轴连续点动开始
+    CONST CMD_JOINT_STOP = 4  ' 单轴停止
+    CONST CMD_HOME = 10
+    CONST CMD_CART_JOG_START = 20
+    CONST CMD_CART_JOG_STOP = 21
+    CONST CMD_TRAJ_START = 30
+    CONST CMD_TRAJ_PAUSE = 31
+    CONST CMD_TRAJ_RESUME = 32  ' 轨迹（暂停后）恢复继续
+    CONST CMD_TRAJ_STOP = 33
+    CONST CMD_CL_START = 40
+    CONST CMD_CL_STOP = 41
+    CONST CMD_STOP = 90
+    CONST CMD_ESTOP = 99  ' 急停请求
+
+    ' modbus reg config
+    CONST REG_PC_HEARTBEAT = 0  ' Qt心跳计数？
+    CONST REG_CMD_SEQ = 1  ' 命令序号计数，每发一套命令+1
+    CONST REG_CMD_ID = 2  ' 命令类型
+    CONST REG_CMD_STATE = 3  ' 0空闲，1接收，2执行中，3完成，4错误
+    CONST REG_CMD_ERROR = 4
+    CONST REG_SYSTEM_STATE = 5
+    CONST REG_MOTION_MODE = 6
+    CONST REG_SAFETY_STATE = 7
+    CONST REG_ACTIVE_TASK = 8
+    CONST REG_EVENT_BEGIN = 90
+
+    ' error code
+    CONST ERR_OK                = 0
+    CONST ERR_UNKNOWN_CMD       = 1001
+    CONST ERR_MODE_BUSY         = 1002
+    CONST ERR_SYSTEM_NOT_READY  = 1003
+    CONST ERR_NEED_HOME         = 1004
+    CONST ERR_SAFETY_ACTIVE     = 1005
+    CONST ERR_TASK_START_FAIL   = 1006
+
+    ' other config para
+    CONST MAX_EVENT_LEVEL = 3
+
+
+END SUB

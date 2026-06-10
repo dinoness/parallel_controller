@@ -161,7 +161,7 @@ WHILE 1
         ELSE
             'RAPIDSTOP(1)
 			PRINT "Motion stopped."
-       ENDIF
+        ENDIF
 
         i_loop = i_loop + CmdSize  ' 移到下一条指令
     WEND
