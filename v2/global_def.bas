@@ -23,6 +23,12 @@ GLOBAL SUB GLOBAL_DEF()
     CONST EVENT_STOP         = 9
     CONST EVENT_ERROR_RESET  = 10
 
+    ' task id(额外开启的任务号)
+    CONST TASK_HOEM = 1
+    CONST TASK_JOINT = 2
+    CONST TASK_CATR_JOG = 3
+    CONST TASK_TRAJ = 4
+
     ' motion_mode
     CONST MODE_IDLE = 0  ' 空闲
     CONST MODE_JOINT_MANUAL = 1  ' 手动控制
@@ -49,6 +55,11 @@ GLOBAL SUB GLOBAL_DEF()
     CONST CMD_STOP = 90
     CONST CMD_ESTOP = 99  ' 急停请求
 
+    ' State flag of data
+    CONST F_DataUpdate = 1
+    CONST F_DataUsed = 2
+    CONST F_DataBlank = 3
+
     ' modbus reg config
     CONST REG_PC_HEARTBEAT = 0  ' Qt心跳计数？
     CONST REG_CMD_SEQ = 1  ' 命令序号计数，每发一套命令+1
@@ -59,7 +70,11 @@ GLOBAL SUB GLOBAL_DEF()
     CONST REG_MOTION_MODE = 6
     CONST REG_SAFETY_STATE = 7
     CONST REG_ACTIVE_TASK = 8
+    CONST REG_JOINT_CMD_STATE_BEGIN = 80
     CONST REG_EVENT_BEGIN = 90
+
+    ' table id config
+    CONST TABLE_JOINT_CMD_BEGIN = 300
 
     ' error code
     CONST ERR_OK                = 0
@@ -72,6 +87,8 @@ GLOBAL SUB GLOBAL_DEF()
 
     ' other config para
     CONST MAX_EVENT_LEVEL = 3
+    CONST NUM_JOINT_DATA_GROUP = 5
+    CONST JOINT_CMD_SIZE = 7
 
 
 END SUB

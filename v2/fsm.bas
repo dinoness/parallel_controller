@@ -1,7 +1,7 @@
 ' 事件获取
 GLOBAL SUB CHECK_EVENT(event_register_begin, event_level_size)
-DIM i
-DIM new_event
+LOCAL i
+LOCAL new_event
 FOR i = 0 TO event_level_size STEP 1
     new_event = MODBUS_REG(i + event_register_begin)
     IF new_event <> EVENT_IDLE
@@ -29,7 +29,6 @@ GLOBAL SUB SMF_DISPATCH(current_state, event)
         Handle_SYS_ERROR(event)
     ENDIF
 
-
 END SUB
 
 
@@ -38,8 +37,10 @@ SUB Handle_SYS_SERVO_READY(event)
         ' 执行回零操作
         ' 完成后状态切换到HOMING
     ELSEIF event = EVENT_JOINT THEN
-        ' 执行单轴运动
-        ' 完成后状态切换到SERVO_READY
+        RUNTASK TASK_JOINT, MANNUAL_JOINT()
+        motion_mode = MODE_JOINT_MANUAL
+        system_state =  SYS_RUNNING
+
     ELSE
         ' 输出未回零
         ' 完成后状态切换到SERVO_READY
@@ -65,8 +66,10 @@ SUB Handle_SYS_READY(event)
         ' 执行回零操作
         ' 完成后状态切换到HOMING
     ELSEIF event = EVENT_JOINT THEN
-        ' 下发单轴运动
-        ' 完成后状态切换到RUNNING
+        RUNTASK TASK_JOINT, MANNUAL_JOINT()
+        motion_mode = MODE_JOINT_MANUAL
+        system_state =  SYS_RUNNING
+
     ELSEIF event = EVENT_CART_JOG THEN
         ' 下发点动
         ' 完成后状态切换到RUNNING
@@ -84,8 +87,10 @@ SUB Handle_SYS_RUNNING(event)
     IF event = EVENT_STOP
         ' 清空任务缓冲区，停止当前任务
         ' 完成后状态切换到SERVO_READY
-    ELSEIF event = EVENT_JOINT_DONE
-        ' 完成后状态切换到SERVO_READY
+    ELSEIF event = EVENT_JOINT_DONE  ' 结束指令来源：上位机停止该运动指令与没有运动
+        STOPTASK TASK_JOINT
+        system_state =  SYS_SERVO_READY
+
     ELSEIF event = EVENT_CART_JOG_DONE
         ' 完成后状态切换到SERVO_READY
     ELSEIF event = EVENT_TRAJ_DONE
