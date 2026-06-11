@@ -22,6 +22,7 @@ GLOBAL SUB GLOBAL_DEF()
     CONST EVENT_TRAJ_DONE    = 8
     CONST EVENT_STOP         = 9
     CONST EVENT_ERROR_RESET  = 10
+    CONST EVENT_ESTOP        = 99
 
     ' task id(额外开启的任务号)
     CONST TASK_HOEM = 1

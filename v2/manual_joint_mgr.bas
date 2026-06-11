@@ -16,8 +16,8 @@ GLOBAL SUB MANNUAL_JOINT()
     LOCAL cmd_end_index
     LOCAL speed_level
 
-    FOR n_loop = REG_JOINT_CMD_STATE_BEGIN TO (REG_JOINT_CMD_STATE_BEGIN + NUM_JOINT_DATA_GROUP) STEP 1
-	    MODBUS_REG(n_loop) = F_DataBlank
+    FOR n_loop = 0 TO (NUM_JOINT_DATA_GROUP - 1) STEP 1
+	    MODBUS_REG(n_loop + REG_JOINT_CMD_STATE_BEGIN) = F_DataBlank
     NEXT
 
     ' 这里可以加一个信号回传，说明准备完成=======================
@@ -33,7 +33,7 @@ GLOBAL SUB MANNUAL_JOINT()
 
         ' 定位指令
         cmd_start_index = TABLE_JOINT_CMD_BEGIN + cur_group_id * JOINT_CMD_SIZE
-        cmd_end_index = loop_start_index + JOINT_CMD_SIZE - 1
+        cmd_end_index = cmd_start_index + JOINT_CMD_SIZE - 1
 
         cmd_id = TABLE(cmd_start_index)
         speed_level = TABLE(cmd_end_index)
@@ -64,6 +64,6 @@ GLOBAL SUB MANNUAL_JOINT()
             WAIT IDLE
         ENDIF
 
-        MODBUS_REG(cur_group_id) = F_DataUsed
+        MODBUS_REG(cur_group_id + REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
     WEND
 END SUB
