@@ -66,7 +66,7 @@ SUB Handle_SYS_SERVO_READY(cur_event)
         ' 启动回零任务
         ' 注: home_robot() 内部使用 DATUM 指令，在后台任务中执行
         '     完成后需通过 MODBUS_REG 写入 EVENT_HOME_DONE 通知FSM
-        RUNTASK TASK_HOEM, HOME_TASK()
+        RUNTASK TASK_HOEM, home_robot()
         motion_mode = MODE_HOME
         active_task = TASK_HOEM
         system_state = SYS_HOMING
@@ -122,7 +122,7 @@ SUB Handle_SYS_HOMING(cur_event)
     IF cur_event = EVENT_STOP THEN
         ' 中断回零任务
         STOPTASK TASK_HOEM
-        RAPIDSTOP(1)  ' 需要求证=================================
+        RAPIDSTOP(1)  ' 清楚缓冲的运动
         WAIT IDLE
         motion_mode = MODE_IDLE
         active_task = -1
@@ -172,7 +172,7 @@ END SUB
 SUB Handle_SYS_READY(cur_event)
     IF cur_event = EVENT_HOME THEN
         ' 重新执行回零（例如更换工具后重新标定）
-        RUNTASK TASK_HOEM, HOME_TASK()
+        RUNTASK TASK_HOEM, home_robot()
         motion_mode = MODE_HOME
         active_task = TASK_HOEM
         home_initstate = 0
@@ -230,8 +230,8 @@ END SUB
 
 ' ================================================================
 ' Handle_SYS_RUNNING — 正在执行运动任务
-' 根据当前 motion_mode 判断是哪种运动类型，执行对应的停止/完成处理
-' 允许: STOP, *_DONE(各类运动完成)
+' 根据当前 motion_mode 判断是哪种运动类型，执行对应的停止/暂停/完成处理
+' 允许: STOP, PAUSE, *_DONE(各类运动完成)
 ' ================================================================
 SUB Handle_SYS_RUNNING(cur_event)
     IF cur_event = EVENT_STOP THEN
@@ -251,7 +251,7 @@ SUB Handle_SYS_RUNNING(cur_event)
             PRINT "[FSM] 轨迹执行被停止"
         ENDIF
 
-        RAPIDSTOP(1)  '====================之后考察一下
+        RAPIDSTOP(4)  ' 取消当前运动和缓冲运动
         WAIT IDLE
         motion_mode = MODE_IDLE
         active_task = -1
@@ -311,6 +311,13 @@ SUB Handle_SYS_RUNNING(cur_event)
         active_task = -1
         PRINT "[FSM] 运动中急停，状态: SYS_RUNNING -> SYS_ESTOP"
 
+    ELSEIF cur_event = EVENT_PAUSE THEN
+        ' 暂停当前运动任务
+        PAUSETASK active_task
+        PRINT "[FSM] 运动暂停，状态: SYS_RUNNING -> SYS_PAUSED"
+        system_state = SYS_PAUSED
+        ' motion_mode 保持不变，用于记录暂停前是什么运动类型
+
     ELSEIF cur_event = EVENT_JOINT THEN
         ' 已在运行单轴调整，拒绝重复
         PRINT "[FSM] 单轴调整任务已在进行中"
@@ -340,7 +347,7 @@ END SUB
 
 ' ================================================================
 ' Handle_SYS_PAUSED — 运动已暂停
-' 允许: STOP(停止), TRAJ(恢复), JOINT(恢复)
+' 允许: STOP(停止), RESUME(恢复)
 ' ================================================================
 SUB Handle_SYS_PAUSED(cur_event)
     IF cur_event = EVENT_STOP THEN
@@ -357,26 +364,18 @@ SUB Handle_SYS_PAUSED(cur_event)
             ' CALL cart_jog_stop()
         ENDIF
 
-        RAPIDSTOP(1)
+        RAPIDSTOP(1)  ' 取消缓冲运动
         WAIT IDLE
         motion_mode = MODE_IDLE
         active_task = -1
         system_state = SYS_SERVO_READY
         PRINT "[FSM] 暂停任务被停止，状态: SYS_PAUSED -> SYS_SERVO_READY"
 
-    ELSEIF cur_event = EVENT_TRAJ THEN
-        ' 恢复轨迹执行
-        ' 调用外部函数: traj_resume() — 重新启动轨迹任务
-        ' RUNTASK TASK_TRAJ, TRAJ_TASK()
+    ELSEIF cur_event = EVENT_RESUME THEN
+        ' 恢复当前暂停的任务
+        RESUMETASK active_task
         system_state = SYS_RUNNING
-        PRINT "[FSM] 轨迹恢复，状态: SYS_PAUSED -> SYS_RUNNING"
-
-    ELSEIF cur_event = EVENT_CART_JOG THEN
-        ' 恢复点动
-        ' 调用外部函数: cart_jog_resume()
-        ' RUNTASK TASK_CATR_JOG, CART_JOG_TASK()
-        system_state = SYS_RUNNING
-        PRINT "[FSM] 点动恢复，状态: SYS_PAUSED -> SYS_RUNNING"
+        PRINT "[FSM] 运动恢复，状态: SYS_PAUSED -> SYS_RUNNING"
 
     ELSEIF cur_event = EVENT_ESTOP THEN
         ' 急停
