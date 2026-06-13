@@ -66,7 +66,7 @@ SUB Handle_SYS_SERVO_READY(cur_event)
         ' 启动回零任务
         ' 注: home_robot() 内部使用 DATUM 指令，在后台任务中执行
         '     完成后需通过 MODBUS_REG 写入 EVENT_HOME_DONE 通知FSM
-        RUNTASK TASK_HOEM, home_robot()
+        RUNTASK TASK_HOEM, HOME_TASK()
         motion_mode = MODE_HOME
         active_task = TASK_HOEM
         system_state = SYS_HOMING
