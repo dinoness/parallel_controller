@@ -46,6 +46,8 @@ GLOBAL SUB home_robot()
             ENDIF
         ENDIF
     NEXT
+	
+	MODBUS_REG(REG_EVENT_L1) = EVENT_HOME_DONE
 
     PRINT "home_initstate:"home_initstate
 

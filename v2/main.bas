@@ -20,7 +20,7 @@ GLOBAL bus_total_axis_num
 GLOBAL home_initstate  ' 回零操作
 
 GLOBAL_DEF()
-
+REG_CLEAR()
 '========================================================
 ' 系统状态初始化
 '========================================================
@@ -32,7 +32,7 @@ safety_state = 0
 
 MODBUS_REG(REG_SYSTEM_STATE) = system_state
 MODBUS_REG(REG_MOTION_MODE) = motion_mode
-MODBUS_REG(REG_CMD_STATE) = CMD_STATE_IDLE
+' MODBUS_REG(REG_CMD_STATE) = CMD_STATE_IDLE
 MODBUS_REG(REG_CMD_ERROR) = ERR_OK
 last_cmd_seq = MODBUS_REG(REG_CMD_SEQ)
 
@@ -60,7 +60,7 @@ MODBUS_REG(REG_SYSTEM_STATE) = SYS_SERVO_READY
 ' 运动参数配置
 '========================================================
 '' ==========  设置运动相关参数  ==========
-AXIS_CONFIG()
+AXIS_CONGIF()
 
 '' ==========  定义几何尺寸  ==========
 rob_para_config1(bus_total_axis_num)
@@ -69,23 +69,24 @@ rob_para_config1(bus_total_axis_num)
 DEFINE_CFRAME  1000,BUS_NODE_NUM,0,0,0    'framenum, totalaxises, axises_aux,  max_attitudes,  rotatetype
 
 
+
 '========================================================
 ' 主循环
 '========================================================
-DIM event
+DIM cur_event
 WHILE 1
 
     ' 2. 获取新事件
-    event = CHECK_EVENT(REG_EVENT_BEGIN, MAX_EVENT_LEVEL)
+    cur_event = CHECK_EVENT(REG_EVENT_BEGIN, MAX_EVENT_LEVEL)
 
     ' 3. 监控当前任务
-    SMF_DISPATCH(system_state, event)
+    SMF_DISPATCH(system_state, cur_event)
 
     ' 4. 写状态反馈
     MODBUS_REG(REG_SYSTEM_STATE) = system_state' 系统状态
     MODBUS_REG(REG_MOTION_MODE) = motion_mode  ' 运动模式
     MODBUS_REG(REG_ACTIVE_TASK) = active_task  ' 当前正在执行的任务
 
-    DELAY(10)
+    DELAY(100)
 
 WEND
