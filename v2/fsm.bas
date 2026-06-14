@@ -126,7 +126,6 @@ SUB Handle_SYS_HOMING(cur_event)
         WAIT IDLE
         motion_mode = MODE_IDLE
         active_task = -1
-        home_initstate = 0
         system_state = SYS_SERVO_READY
         PRINT "[FSM] 回零被中断，状态: SYS_HOMING -> SYS_SERVO_READY"
 
@@ -137,7 +136,6 @@ SUB Handle_SYS_HOMING(cur_event)
         '     MODBUS_REG(REG_EVENT_BEGIN + 1) = EVENT_HOME_DONE
         motion_mode = MODE_IDLE
         active_task = -1
-        home_initstate = 1
         system_state = SYS_READY
         PRINT "[FSM] 回零完成，状态: SYS_HOMING -> SYS_READY"
 
@@ -154,7 +152,6 @@ SUB Handle_SYS_HOMING(cur_event)
         system_state = SYS_ESTOP
         safety_state = 2
         MODBUS_REG(REG_SAFETY_STATE) = 2
-        home_initstate = 0
         PRINT "[FSM] 回零中急停，状态: SYS_HOMING -> SYS_ESTOP"
 
     ELSE
@@ -175,7 +172,6 @@ SUB Handle_SYS_READY(cur_event)
         RUNTASK TASK_HOEM, home_robot()
         motion_mode = MODE_HOME
         active_task = TASK_HOEM
-        home_initstate = 0
         system_state = SYS_HOMING
         PRINT "[FSM] 重新回零，状态: SYS_READY -> SYS_HOMING"
 
@@ -292,7 +288,6 @@ SUB Handle_SYS_RUNNING(cur_event)
         STOPTASK TASK_HOEM
         motion_mode = MODE_IDLE
         active_task = -1
-        home_initstate = 1
         system_state = SYS_READY
         PRINT "[FSM] 回零完成，状态: SYS_RUNNING -> SYS_READY"
 

@@ -17,7 +17,6 @@ GLOBAL last_cmd_seq
 GLOBAL cmd_id
 GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
-GLOBAL home_initstate  ' 回零操作
 
 GLOBAL_DEF()
 REG_CLEAR()
