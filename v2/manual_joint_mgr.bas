@@ -47,9 +47,11 @@ GLOBAL SUB MANNUAL_JOINT()
     ' 执行指令
     IF cmd_id = CMD_JOINT_MOVE_REL THEN
         MOVE(TABLE(cmd_start_index+1), TABLE(cmd_start_index+2), TABLE(cmd_start_index+3), TABLE(cmd_start_index+4), TABLE(cmd_start_index+5))
+        MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
         WAIT IDLE
+    ELSE
+        PRINT "指令代号不为CMD_MOVE。"
     ENDIF
 
-    MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
     MODBUS_REG(REG_EVENT_L1) = EVENT_JOINT_DONE
 END SUB

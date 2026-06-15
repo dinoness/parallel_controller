@@ -11,7 +11,7 @@
 ' READ_BIT2(位数， 字典索引)
 
 
-GLOBAL SUB home_robot()
+GLOBAL SUB HOME_ROBOT()
     IF bus_initstate <> 1 THEN
         PRINT "总线未初始化"
         END SUB
@@ -53,9 +53,9 @@ GLOBAL SUB home_robot()
         ENDIF
     NEXT
 
-    IF num_home_axis = bus_total_axis_num
-        MODBUS_REG(REG_EVENT_L1) = EVENT_HOME_DONE
-    ELSE
+    IF num_home_axis <> bus_total_axis_num
         MODBUS_REG(REG_EVENT_L1) = EVENT_HOME_FAILED
+    ELSE
+        MODBUS_REG(REG_EVENT_L1) = EVENT_HOME_DONE
     ENDIF
 END SUB

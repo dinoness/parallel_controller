@@ -66,7 +66,7 @@ SUB Handle_SYS_SERVO_READY(cur_event)
         ' 启动回零任务
         ' 注: home_robot() 内部使用 DATUM 指令，在后台任务中执行
         '     完成后需通过 MODBUS_REG 写入 EVENT_HOME_DONE 通知FSM
-        RUNTASK TASK_HOEM, HOME_TASK()
+        RUNTASK TASK_HOEM, HOME_ROBOT()
         motion_mode = MODE_HOME
         active_task = TASK_HOEM
         system_state = SYS_HOMING
@@ -74,7 +74,7 @@ SUB Handle_SYS_SERVO_READY(cur_event)
 
     ELSEIF cur_event = EVENT_JOINT THEN
         ' 单轴调整（不需要回零即可执行，关节空间独立控制）
-        RUNTASK TASK_JOINT, JOINT_TASK()
+        RUNTASK TASK_JOINT, MANNUAL_JOINT()
         motion_mode = MODE_JOINT_MANUAL
         active_task = TASK_JOINT
         system_state = SYS_RUNNING
@@ -139,6 +139,17 @@ SUB Handle_SYS_HOMING(cur_event)
         system_state = SYS_READY
         PRINT "[FSM] 回零完成，状态: SYS_HOMING -> SYS_READY"
 
+    ELSEIF cur_event = EVENT_HOME_FAILED THEN
+        ' 回零失败（驱动器报警、限位未找到等）
+        STOPTASK TASK_HOEM
+        RAPIDSTOP(1)
+        WAIT IDLE
+        motion_mode = MODE_IDLE
+        active_task = -1
+        system_state = SYS_SERVO_READY
+        MODBUS_REG(REG_CMD_ERROR) = ERR_HOME_FAILED
+        PRINT "[FSM] 回零失败，状态: SYS_HOMING -> SYS_SERVO_READY"
+
     ELSEIF cur_event = EVENT_HOME THEN
         ' 已在回零中，拒绝重复请求
         PRINT "[FSM] 回零已在进行中，请等待完成"
@@ -177,7 +188,7 @@ SUB Handle_SYS_READY(cur_event)
 
     ELSEIF cur_event = EVENT_JOINT THEN
         ' 单轴手动调整
-        RUNTASK TASK_JOINT, JOINT_TASK()
+        RUNTASK TASK_JOINT, MANNUAL_JOINT()
         motion_mode = MODE_JOINT_MANUAL
         active_task = TASK_JOINT
         system_state = SYS_RUNNING
