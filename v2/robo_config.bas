@@ -17,13 +17,12 @@ GLOBAL SUB ROBO_PARA_CONFIG1(num_axis)
 
 
 
-    ' 已经乘过单位转换了，这里又乘不就转两次了吗==========================
     ' 替换为倒置后支链的映射关系记得改
-    b1(0, R1 * COS(PI/2) * LENGTH_UNIT,   R1 * SIN(PI/2) * LENGTH_UNIT,   0 * LENGTH_UNIT)
-    b2(0, R1 * COS(7*PI/6) * LENGTH_UNIT, R1 * SIN(7*PI/6) * LENGTH_UNIT, 0 * LENGTH_UNIT)
-    b3(0, R1 * COS(-PI/6) * LENGTH_UNIT,  R1 * SIN(-PI/6) * LENGTH_UNIT,  0 * LENGTH_UNIT)
-    b4(0, R2 * COS(5*PI/6) * LENGTH_UNIT,   R2 * SIN(5*PI/6) * LENGTH_UNIT,   H * LENGTH_UNIT)
-    b5(0, R2 * COS(PI/6) * LENGTH_UNIT, R2 * SIN(PI/6) * LENGTH_UNIT, H * LENGTH_UNIT)
+    b1(0, R1 * COS(PI/2),   R1 * SIN(PI/2),   0)
+    b2(0, R1 * COS(7*PI/6), R1 * SIN(7*PI/6), 0)
+    b3(0, R1 * COS(-PI/6),  R1 * SIN(-PI/6),  0 )
+    b4(0, R2 * COS(5*PI/6) ,   R2 * SIN(5*PI/6) ,   H )
+    b5(0, R2 * COS(PI/6) , R2 * SIN(PI/6) , H )
 
 
     ' movable plant(movable plant coordiant)
@@ -35,11 +34,11 @@ GLOBAL SUB ROBO_PARA_CONFIG1(num_axis)
     dim m5(3)
 
 
-    m1(0, r_1 * COS(PI/2) * LENGTH_UNIT,   r_1 * SIN(PI/2) * LENGTH_UNIT,   0 * LENGTH_UNIT)
-    m2(0, r_1 * COS(7*PI/6) * LENGTH_UNIT, r_1 * SIN(7*PI/6) * LENGTH_UNIT, 0 * LENGTH_UNIT)
-    m3(0, r_1 * COS(-PI/6) * LENGTH_UNIT,  r_1 * SIN(-PI/6) * LENGTH_UNIT,  0 * LENGTH_UNIT)
-    m4(0, r_2 * COS(5*PI/6) * LENGTH_UNIT, r_2 * SIN(5*PI/6) * LENGTH_UNIT, h_ * LENGTH_UNIT)
-    m5(0, r_2 * COS(PI/6) * LENGTH_UNIT,   r_2 * SIN(PI/6) * LENGTH_UNIT,   h_ * LENGTH_UNIT)
+    m1(0, r_1 * COS(PI/2) ,   r_1 * SIN(PI/2) ,   0 )
+    m2(0, r_1 * COS(7*PI/6) , r_1 * SIN(7*PI/6) , 0 )
+    m3(0, r_1 * COS(-PI/6) ,  r_1 * SIN(-PI/6) ,  0 )
+    m4(0, r_2 * COS(5*PI/6) , r_2 * SIN(5*PI/6) , h_ )
+    m5(0, r_2 * COS(PI/6) ,   r_2 * SIN(PI/6) ,   h_ )
 
 
     dim limb0(5)
@@ -80,4 +79,6 @@ GLOBAL SUB ROBOT_MODE()
     BASE(0,1,2,3,4)
     CONNFRAME(1000,TABLE_ROBO_PARA_BEGIN,6,7,8,9,10)
     WAIT LOADED  '' 等待加载完成
+
+    BASE(6,7,8,9,10)  ' 控制虚拟轴
 END SUB

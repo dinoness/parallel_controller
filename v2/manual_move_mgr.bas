@@ -95,10 +95,10 @@ GLOBAL SUB CART_JOG()
         joint_acc = JOINT_L1_ACC
     ENDIF
 
-    ' 待验证
-    ' speed = joint_speed, joint_speed, joint_speed, joint_speed, joint_speed
-    ' accel = joint_acc, joint_acc, joint_acc, joint_acc, joint_acc
-    ' decel = joint_acc, joint_acc, joint_acc, joint_acc, joint_acc
+    BASE(6,7,8,9,10)
+    speed = joint_speed, joint_speed, joint_speed, joint_speed, joint_speed
+    accel = joint_acc, joint_acc, joint_acc, joint_acc, joint_acc
+    decel = joint_acc, joint_acc, joint_acc, joint_acc, joint_acc
 
 
     ' 执行指令

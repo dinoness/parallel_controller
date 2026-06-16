@@ -266,6 +266,7 @@ SUB Handle_SYS_ROBOT_MODE(cur_event)
 
     ELSEIF cur_event = EVENT_ROBOT_OUT THEN
         ' 退出机器人模式，回到伺服就绪态
+        CANCEL(1)  ' 用来退出机械手模式
         system_state = SYS_SERVO_READY
         PRINT "[FSM] 退出机器人模式，状态: SYS_ROBOT_MODE -> SYS_SERVO_READY"
 
@@ -309,13 +310,9 @@ SUB Handle_SYS_RUNNING(cur_event)
             PRINT "[FSM] 单轴调整被停止"
         ELSEIF motion_mode = MODE_CART_JOG THEN
             STOPTASK TASK_CATR_JOG
-            ' 调用外部函数: cart_jog_stop() — 发送 RAPIDSTOP 并等待 IDLE
-            ' CALL cart_jog_stop()
             PRINT "[FSM] 笛卡尔点动被停止"
         ELSEIF motion_mode = MODE_TRAJECTORY THEN
             STOPTASK TASK_TRAJ
-            ' 调用外部函数: traj_stop() — 发送 RAPIDSTOP 并等待 IDLE
-            ' CALL traj_stop()
             PRINT "[FSM] 轨迹执行被停止"
         ENDIF
 
@@ -419,14 +416,10 @@ SUB Handle_SYS_PAUSED(cur_event)
         ' 停止当前暂停的任务
         IF motion_mode = MODE_TRAJECTORY THEN
             STOPTASK TASK_TRAJ
-            ' 调用外部函数: traj_stop()
-            ' CALL traj_stop()
         ELSEIF motion_mode = MODE_JOINT_MANUAL THEN
             STOPTASK TASK_JOINT
         ELSEIF motion_mode = MODE_CART_JOG THEN
             STOPTASK TASK_CATR_JOG
-            ' 调用外部函数: cart_jog_stop()
-            ' CALL cart_jog_stop()
         ENDIF
 
         RAPIDSTOP(1)  ' 取消缓冲运动
