@@ -43,6 +43,8 @@ GLOBAL SUB SMF_DISPATCH(current_state, cur_event)
         Handle_SYS_HOMING(cur_event)
     ELSEIF current_state = SYS_READY THEN
         Handle_SYS_READY(cur_event)
+    ELSEIF current_state = SYS_ROBOT_MODE THEN
+        Handle_SYS_ROBOT_MODE(cur_event)
     ELSEIF current_state = SYS_RUNNING THEN
         Handle_SYS_RUNNING(cur_event)
     ELSEIF current_state = SYS_PAUSED THEN
@@ -174,8 +176,9 @@ END SUB
 
 
 ' ================================================================
-' Handle_SYS_READY — 已回零，就绪可接收运动指令
-' 允许: HOME(重新回零), JOINT(单轴), CART_JOG(点动), TRAJ(轨迹)
+' Handle_SYS_READY — 已回零，就绪可进入机器人模式或执行回零/单轴
+' 允许: HOME(重新回零), JOINT(单轴), ROBOT_IN(进入机器人模式)
+' CART_JOG/TRAJ 需要先进入 SYS_ROBOT_MODE
 ' ================================================================
 SUB Handle_SYS_READY(cur_event)
     IF cur_event = EVENT_HOME THEN
@@ -186,6 +189,11 @@ SUB Handle_SYS_READY(cur_event)
         system_state = SYS_HOMING
         PRINT "[FSM] 重新回零，状态: SYS_READY -> SYS_HOMING"
 
+    ELSEIF cur_event = EVENT_ROBOT_IN THEN
+        ' 进入机器人模式，允许笛卡尔空间运动
+        system_state = SYS_ROBOT_MODE
+        PRINT "[FSM] 进入机器人模式，状态: SYS_READY -> SYS_ROBOT_MODE"
+
     ELSEIF cur_event = EVENT_JOINT THEN
         ' 单轴手动调整
         RUNTASK TASK_JOINT, MANNUAL_JOINT()
@@ -195,23 +203,14 @@ SUB Handle_SYS_READY(cur_event)
         PRINT "[FSM] 单轴调整开始，状态: SYS_READY -> SYS_RUNNING"
 
     ELSEIF cur_event = EVENT_CART_JOG THEN
-        ' 笛卡尔空间点动
-        RUNTASK TASK_CATR_JOG, CART_JOG_TASK()
-        motion_mode = MODE_CART_JOG
-        active_task = TASK_CATR_JOG
-        system_state = SYS_RUNNING
-        PRINT "[FSM] 笛卡尔点动开始，状态: SYS_READY -> SYS_RUNNING"
+        ' 拒绝：笛卡尔点动需要先进入机器人模式
+        PRINT "[FSM] 拒绝点动: 请先进入机器人模式(EVENT_ROBOT_IN)"
+        MODBUS_REG(REG_CMD_ERROR) = ERR_SYSTEM_NOT_READY
 
     ELSEIF cur_event = EVENT_TRAJ THEN
-        ' 轨迹执行
-        ' 调用外部函数: TRAJ_TASK() — 在 traj_executor.bas 中实现
-        '   功能: 从 TABLE 缓冲池读取轨迹点，逐点执行 MOVE_PTABS
-        '   支持暂停/恢复/停止
-        RUNTASK TASK_TRAJ, TRAJ_TASK()
-        motion_mode = MODE_TRAJECTORY
-        active_task = TASK_TRAJ
-        system_state = SYS_RUNNING
-        PRINT "[FSM] 轨迹执行开始，状态: SYS_READY -> SYS_RUNNING"
+        ' 拒绝：轨迹执行需要先进入机器人模式
+        PRINT "[FSM] 拒绝轨迹: 请先进入机器人模式(EVENT_ROBOT_IN)"
+        MODBUS_REG(REG_CMD_ERROR) = ERR_SYSTEM_NOT_READY
 
     ELSEIF cur_event = EVENT_STOP THEN
         ' 当前无运动，无需停止
@@ -231,6 +230,68 @@ SUB Handle_SYS_READY(cur_event)
         ' 等待运动指令
         PRINT "[FSM] 系统就绪，等待运动指令。当前事件:", cur_event
         ' 状态不变
+    ENDIF
+END SUB
+
+
+' ================================================================
+' Handle_SYS_ROBOT_MODE — 机器人模式，可进行笛卡尔空间运动
+' 允许: CART_JOG(点动), TRAJ(轨迹), JOINT(单轴, 完成后回SYS_SERVO_READY)
+'       ROBOT_OUT(退出机器人模式), HOME(重新回零)
+' ================================================================
+SUB Handle_SYS_ROBOT_MODE(cur_event)
+    IF cur_event = EVENT_CART_JOG THEN
+        ' 笛卡尔空间点动
+        RUNTASK TASK_CATR_JOG, CART_JOG()
+        motion_mode = MODE_CART_JOG
+        active_task = TASK_CATR_JOG
+        system_state = SYS_RUNNING
+        PRINT "[FSM] 笛卡尔点动开始，状态: SYS_ROBOT_MODE -> SYS_RUNNING"
+
+    ELSEIF cur_event = EVENT_TRAJ THEN
+        ' 轨迹执行
+        RUNTASK TASK_TRAJ, TRAJ_TASK()
+        motion_mode = MODE_TRAJECTORY
+        active_task = TASK_TRAJ
+        system_state = SYS_RUNNING
+        PRINT "[FSM] 轨迹执行开始，状态: SYS_ROBOT_MODE -> SYS_RUNNING"
+
+    ELSEIF cur_event = EVENT_JOINT THEN
+        ' 单轴手动调整（完成后回 SYS_SERVO_READY，而非 SYS_ROBOT_MODE）
+        RUNTASK TASK_JOINT, MANNUAL_JOINT()
+        motion_mode = MODE_JOINT_MANUAL
+        active_task = TASK_JOINT
+        system_state = SYS_RUNNING
+        PRINT "[FSM] 单轴调整开始，状态: SYS_ROBOT_MODE -> SYS_RUNNING"
+
+    ELSEIF cur_event = EVENT_ROBOT_OUT THEN
+        ' 退出机器人模式，回到伺服就绪态
+        system_state = SYS_SERVO_READY
+        PRINT "[FSM] 退出机器人模式，状态: SYS_ROBOT_MODE -> SYS_SERVO_READY"
+
+    ELSEIF cur_event = EVENT_HOME THEN
+        ' 重新执行回零
+        RUNTASK TASK_HOEM, home_robot()
+        motion_mode = MODE_HOME
+        active_task = TASK_HOEM
+        system_state = SYS_HOMING
+        PRINT "[FSM] 重新回零，状态: SYS_ROBOT_MODE -> SYS_HOMING"
+
+    ELSEIF cur_event = EVENT_STOP THEN
+        ' 当前无运动，无需停止
+        PRINT "[FSM] 系统已空闲，无需停止"
+
+    ELSEIF cur_event = EVENT_ESTOP THEN
+        ' 急停
+        ' 调用外部函数: enter_estop()
+        ' CALL enter_estop()
+        system_state = SYS_ESTOP
+        safety_state = 2
+        MODBUS_REG(REG_SAFETY_STATE) = 2
+        PRINT "[FSM] 急停触发，状态: SYS_ROBOT_MODE -> SYS_ESTOP"
+
+    ELSE
+        PRINT "[FSM] 机器人模式就绪，等待运动指令。当前事件:", cur_event
     ENDIF
 END SUB
 
@@ -275,24 +336,22 @@ SUB Handle_SYS_RUNNING(cur_event)
         PRINT "[FSM] 单轴调整完成，状态: SYS_RUNNING -> SYS_SERVO_READY"
 
     ELSEIF cur_event = EVENT_CART_JOG_DONE THEN
-        ' 笛卡尔点动任务结束
+        ' 笛卡尔点动任务结束，回到机器人模式继续操作
         STOPTASK TASK_CATR_JOG
-        ' 调用外部函数: cart_jog_stop() — 确保运动完全停止
-        ' CALL cart_jog_stop()
         motion_mode = MODE_IDLE
         active_task = -1
-        system_state = SYS_SERVO_READY
-        PRINT "[FSM] 点动完成，状态: SYS_RUNNING -> SYS_SERVO_READY"
+        system_state = SYS_ROBOT_MODE
+        PRINT "[FSM] 点动完成，状态: SYS_RUNNING -> SYS_ROBOT_MODE"
 
     ELSEIF cur_event = EVENT_TRAJ_DONE THEN
-        ' 轨迹任务结束
+        ' 轨迹任务结束，回到机器人模式继续操作
         STOPTASK TASK_TRAJ
         ' 调用外部函数: traj_stop() — 确保运动完全停止
         ' CALL traj_stop()
         motion_mode = MODE_IDLE
         active_task = -1
-        system_state = SYS_SERVO_READY
-        PRINT "[FSM] 轨迹执行完成，状态: SYS_RUNNING -> SYS_SERVO_READY"
+        system_state = SYS_ROBOT_MODE
+        PRINT "[FSM] 轨迹执行完成，状态: SYS_RUNNING -> SYS_ROBOT_MODE"
 
     ELSEIF cur_event = EVENT_HOME_DONE THEN
         ' 回零任务在 RUNNING 期间完成（回零自身是运动）

@@ -1,3 +1,0 @@
-GLOBAL SUB CART()
-    
-END SUB
