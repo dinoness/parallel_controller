@@ -28,10 +28,10 @@ GLOBAL SUB MANNUAL_JOINT()
     speed_level = TABLE(cmd_end_index)
 
     ' 设置运动级数
-    IF speed_level = SPEED_L3
+    IF speed_level = SPEED_L3 THEN
         joint_speed = JOINT_L3_SPEED
         joint_acc = JOINT_L3_ACC
-    ELSEIF speed_level = 2
+    ELSEIF speed_level = SPEED_L2 THEN
         joint_speed = JOINT_L2_SPEED
         joint_acc = JOINT_L2_ACC
     ELSE
@@ -45,7 +45,7 @@ GLOBAL SUB MANNUAL_JOINT()
 
 
     ' 执行指令
-    IF cmd_id = CMD_JOINT_MOVE_REL THEN
+    IF cmd_id = CMD_MOVE THEN
         MOVE(TABLE(cmd_start_index+1), TABLE(cmd_start_index+2), TABLE(cmd_start_index+3), TABLE(cmd_start_index+4), TABLE(cmd_start_index+5))
         MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
         WAIT IDLE

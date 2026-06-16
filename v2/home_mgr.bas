@@ -42,18 +42,27 @@ GLOBAL SUB HOME_ROBOT()
 	NEXT
 
     
-    WAIT IDLE
+    ' 等待回零完成
+	FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
+		WAIT IDLE(i_axis)
+	NEXT
+	
+    ' 等待驱动器状态更新
+	DELAY(1000)
 
 	' 检查是否回零成功
-    LOCAL num_home_axis = 0
+    LOCAL num_home_axis
+	num_home_axis = 0
     FOR i_axis = 0 TO (bus_total_axis_num - 1) STEP 1
         TABLE(TABLE_DRIVER_STATUE) = DRIVE_STATUS(i_axis)
         IF READ_BIT2(15, TABLE(TABLE_DRIVER_STATUE)) THEN
             num_home_axis = num_home_axis + 1
         ENDIF
+		' PRINT "AXIS ID:"(i_axis+1)
+		' PRINT "Home State:"READ_BIT2(15, TABLE(TABLE_DRIVER_STATUE))
     NEXT
 
-    IF num_home_axis <> bus_total_axis_num
+    IF num_home_axis <> bus_total_axis_num THEN
         MODBUS_REG(REG_EVENT_L1) = EVENT_HOME_FAILED
     ELSE
         MODBUS_REG(REG_EVENT_L1) = EVENT_HOME_DONE

@@ -14,7 +14,7 @@ GLOBAL motion_lock
 GLOBAL safety_state
 GLOBAL active_task
 GLOBAL last_cmd_seq
-GLOBAL cmd_id
+' GLOBAL cmd_id  ' 后续的子模块中有调用，这里就不用了
 GLOBAL bus_initstate  ' 总线初始化状态
 GLOBAL bus_total_axis_num
 

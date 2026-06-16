@@ -1,6 +1,8 @@
+' 轴映射关系 实轴0-1-2-3-4
 GLOBAL SUB Ecat_Init()
     LOCAL node_num, temp_axis, node_axis_num, drive_vender, drive_device, drive_alias
     temp_axis = 0
+    LOCAL i_axis
 
     RAPIDSTOP(2)
     WAIT IDLE
@@ -22,10 +24,11 @@ GLOBAL SUB Ecat_Init()
         ENDIF
 
         ' -------------映射轴号-------------
+        ' 当前的情况是每个驱动器是一个设备，每个驱动器下有一个轴
         FOR node_num = 0 TO NODE_COUNT(BUS_SLOT) - 1
             node_axis_num = NODE_AXIS_COUNT(BUS_SLOT, node_num)
             IF node_axis_num <> 0 THEN
-                FOR j = 0 TO node_axis_num - 1
+                FOR i_axis = 0 TO node_axis_num - 1 STEP 1
                     AXIS_ADDRESS(bus_total_axis_num) = bus_total_axis_num + 1  ' 加一是格式规定
                     ATYPE(bus_total_axis_num) = 65  ' 65-Position  66-Volicity&Profile  67-Torch&Profile
                     DRIVE_PROFILE(bus_total_axis_num) = 1  ' 设置PDO，位置模式+扭矩反馈

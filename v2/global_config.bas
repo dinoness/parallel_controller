@@ -115,13 +115,17 @@ END SUB
 
 GLOBAL SUB REG_CLEAR()
 	LOCAL i
-	FOR i = 0 TO (NUM_JOINT_DATA_GROUP - 1) STEP 1
-		MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN + i) = 0
-	NEXT
+	' FOR i = 0 TO (NUM_JOINT_DATA_GROUP - 1) STEP 1
+	' 	MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN + i) = 0
+	' NEXT
 	
-	FOR i = 0 TO (NUM_JOG_DATA_GROUP - 1) STEP 1
-		MODBUS_REG(REG_JOG_CMD_STATE_BEGIN + i) = 0
-	NEXT
+	' FOR i = 0 TO (NUM_JOG_DATA_GROUP - 1) STEP 1
+	' 	MODBUS_REG(REG_JOG_CMD_STATE_BEGIN + i) = 0
+	' NEXT
+
+
+	MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = 0
+	MODBUS_REG(REG_JOG_CMD_STATE_BEGIN) = 0
 	
 	FOR i = 0 TO (NUM_TRACE_DATA_GROUP - 1) STEP 1
 		MODBUS_REG(REG_TRACE_CMD_STATE_BEGIN + i) = 0
@@ -145,6 +149,9 @@ GLOBAL SUB AXIS_CONGIF()
     ' UNITS为指定运行一个单位需要的脉冲数，之后所有的运动指令都以此为单位
     ' 经过实测，电机运行一圈的脉冲数就是编码器一圈的数值，前提是驱动器中没有设置电子齿轮
     ' 不仅是脉冲轴，总线轴也要设置UNITS
+
+    BASE(0,1,2,3,4)
+    UNITS = u_j1, u_j2, u_j3, u_j4, u_j5
 
     
 
