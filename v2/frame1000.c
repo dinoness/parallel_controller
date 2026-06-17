@@ -8,6 +8,8 @@
 #include "stddef.h"*/
 
 
+// 轴号映射需要更改
+
 #define NULL 0
 
 #ifdef  __cplusplus
@@ -244,7 +246,7 @@ uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, 
     // 必须先回零=================================================================
     pfWorldout[0] = 0;  // x
     pfWorldout[1] = 0;  // y
-    pfWorldout[2] = -555 * LENGTH_UNIT;  // z
+    pfWorldout[2] = -800 * LENGTH_UNIT;  // z
     pfWorldout[3] = 0;  // theta
     pfWorldout[4] = 0;  // phi
 

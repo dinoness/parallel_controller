@@ -2,9 +2,11 @@ GLOBAL SUB ROBO_PARA_CONFIG1(num_axis)
     CONST R1 = 550 * LENGTH_UNIT
     CONST R2 = 500 * LENGTH_UNIT
     CONST H = 0 * LENGTH_UNIT
-    CONST r_1 = 100 * LENGTH_UNIT
-    CONST r_2 = 80 * LENGTH_UNIT
-    CONST h_ = 10 * LENGTH_UNIT
+    CONST r_1 = 148.5 * LENGTH_UNIT
+    CONST r_2 = 62.87 * LENGTH_UNIT
+    CONST h_ = 128 * LENGTH_UNIT
+    CONST l_tool = 7.5 * LENGTH_UNIT
+    CONST h_bais = -1 * LENGTH_UNIT  ' 模型中的偏置误差，后期会去除
 
 
     ' static plant(world coordiant)
@@ -15,14 +17,12 @@ GLOBAL SUB ROBO_PARA_CONFIG1(num_axis)
     dim b4(3)
     dim b5(3)
 
-
-
     ' 替换为倒置后支链的映射关系记得改
-    b1(0, R1 * COS(PI/2),   R1 * SIN(PI/2),   0)
-    b2(0, R1 * COS(7*PI/6), R1 * SIN(7*PI/6), 0)
-    b3(0, R1 * COS(-PI/6),  R1 * SIN(-PI/6),  0 )
-    b4(0, R2 * COS(5*PI/6) ,   R2 * SIN(5*PI/6) ,   H )
-    b5(0, R2 * COS(PI/6) , R2 * SIN(PI/6) , H )
+    b1(0, R1 * COS( 90 * PI/180), R1 * SIN( 90 * PI/180),  0 )
+    b2(0, R1 * COS(210 * PI/180), R1 * SIN(210 * PI/180), h_bais )
+    b3(0, R1 * COS(-30 * PI/180), R1 * SIN(-30 * PI/180), h_bais )
+    b4(0, R2 * COS( 30 * PI/180), R2 * SIN( 30 * PI/180), h_bais + H )
+    b5(0, R2 * COS(150 * PI/180), R2 * SIN(150 * PI/180), h_bais + H )
 
 
     ' movable plant(movable plant coordiant)
@@ -33,17 +33,16 @@ GLOBAL SUB ROBO_PARA_CONFIG1(num_axis)
     dim m4(3)
     dim m5(3)
 
-
-    m1(0, r_1 * COS(PI/2) ,   r_1 * SIN(PI/2) ,   0 )
-    m2(0, r_1 * COS(7*PI/6) , r_1 * SIN(7*PI/6) , 0 )
-    m3(0, r_1 * COS(-PI/6) ,  r_1 * SIN(-PI/6) ,  0 )
-    m4(0, r_2 * COS(5*PI/6) , r_2 * SIN(5*PI/6) , h_ )
-    m5(0, r_2 * COS(PI/6) ,   r_2 * SIN(PI/6) ,   h_ )
+    m1(0, r_1 * COS( 90 * PI/180), r_1 * SIN( 90 * PI/180), l_tool )
+    m2(0, r_1 * COS(195 * PI/180), r_1 * SIN(195 * PI/180), l_tool )
+    m3(0, r_1 * COS(-15 * PI/180), r_1 * SIN(-15 * PI/180), l_tool )
+    m4(0, r_2 * COS( 45 * PI/180), r_2 * SIN( 45 * PI/180), l_tool + h_ )
+    m5(0, r_2 * COS(135 * PI/180), r_2 * SIN(135 * PI/180), l_tool + h_ )
 
 
     dim limb0(5)
-    'limb0(0, 714.510315 * LENGTH_UNIT, 714.510315 * LENGTH_UNIT, 714.510315 * LENGTH_UNIT, 688.058838 * LENGTH_UNIT, 688.058838 * LENGTH_UNIT)
-    limb0(0, 714.5104370117 * LENGTH_UNIT, 714.5114135742 * LENGTH_UNIT, 714.5114135742 * LENGTH_UNIT, 688.0593261719 * LENGTH_UNIT, 688.0593261719 * LENGTH_UNIT)
+    ' From Model
+    limb0(0, 886.8522 * LENGTH_UNIT, 890.6256 * LENGTH_UNIT, 890.6256 * LENGTH_UNIT, 795.8990 * LENGTH_UNIT, 795.8990 * LENGTH_UNIT)
 
 
     dim config_start_id

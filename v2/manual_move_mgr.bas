@@ -45,7 +45,7 @@ GLOBAL SUB MANNUAL_JOINT()
     decel = joint_acc, joint_acc, joint_acc, joint_acc, joint_acc
 
 
-    ' 执行指令
+    ' 执行指令，此处下发位移的指令不乘系数，由上位机调整
     IF cmd_id = CMD_MOVE THEN
         MOVE(TABLE(cmd_start_index+1), TABLE(cmd_start_index+2), TABLE(cmd_start_index+3), TABLE(cmd_start_index+4), TABLE(cmd_start_index+5))
         MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
@@ -101,7 +101,7 @@ GLOBAL SUB CART_JOG()
     decel = joint_acc, joint_acc, joint_acc, joint_acc, joint_acc
 
 
-    ' 执行指令
+    ' 执行指令，此处下发位移的指令不乘系数，由上位机调整
     IF cmd_id = CMD_MOVE THEN
         MOVE(TABLE(cmd_start_index+1), TABLE(cmd_start_index+2), TABLE(cmd_start_index+3), TABLE(cmd_start_index+4), TABLE(cmd_start_index+5))
         MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
