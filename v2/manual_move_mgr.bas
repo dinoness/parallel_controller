@@ -15,9 +15,9 @@ GLOBAL SUB MANNUAL_JOINT()
     UNITS = u_j1, u_j2, u_j3, u_j4, u_j5
     dpos = 0,0,0,0,0  '设置关节轴的位置
 
-    data_state = MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN)
+    data_state = MODBUS_REG(REG_JOINT_CMD_STATE_ST)
     WHILE (data_state <> F_DataUpdate)
-		data_state = MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN)
+		data_state = MODBUS_REG(REG_JOINT_CMD_STATE_ST)
 	WEND
 
     ' 定位指令
@@ -48,7 +48,7 @@ GLOBAL SUB MANNUAL_JOINT()
     ' 执行指令，此处下发位移的指令不乘系数，由上位机调整
     IF cmd_id = CMD_MOVE THEN
         MOVE(TABLE(cmd_start_index+1), TABLE(cmd_start_index+2), TABLE(cmd_start_index+3), TABLE(cmd_start_index+4), TABLE(cmd_start_index+5))
-        MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
+        MODBUS_REG(REG_JOINT_CMD_STATE_ST) = F_DataUsed
         WAIT IDLE
     ELSE
         PRINT "指令代号不为CMD_MOVE。"
@@ -70,9 +70,9 @@ GLOBAL SUB CART_JOG()
     LOCAL joint_acc
     LOCAL data_state
 
-    data_state = MODBUS_REG(REG_CART_CMD_STATE_BEGIN)
+    data_state = MODBUS_REG(REG_CART_CMD_STATE_ST)
     WHILE (data_state <> F_DataUpdate)
-		data_state = MODBUS_REG(REG_CART_CMD_STATE_BEGIN)
+		data_state = MODBUS_REG(REG_CART_CMD_STATE_ST)
 	WEND
 
     ' 定位指令
@@ -104,7 +104,7 @@ GLOBAL SUB CART_JOG()
     ' 执行指令，此处下发位移的指令不乘系数，由上位机调整
     IF cmd_id = CMD_MOVE THEN
         MOVE(TABLE(cmd_start_index+1), TABLE(cmd_start_index+2), TABLE(cmd_start_index+3), TABLE(cmd_start_index+4), TABLE(cmd_start_index+5))
-        MODBUS_REG(REG_JOINT_CMD_STATE_BEGIN) = F_DataUsed
+        MODBUS_REG(REG_JOINT_CMD_STATE_ST) = F_DataUsed
         WAIT IDLE
     ELSE
         PRINT "该指令暂不支持，代号："cmd_id

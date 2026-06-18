@@ -191,6 +191,7 @@ SUB Handle_SYS_READY(cur_event)
 
     ELSEIF cur_event = EVENT_ROBOT_IN THEN
         ' 进入机器人模式，允许笛卡尔空间运动
+		ROBOT_MODE()
         system_state = SYS_ROBOT_MODE
         PRINT "[FSM] 进入机器人模式，状态: SYS_READY -> SYS_ROBOT_MODE"
 
