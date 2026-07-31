@@ -80,4 +80,7 @@ GLOBAL SUB ROBOT_MODE()
     WAIT LOADED  '' 等待加载完成
 
     BASE(6,7,8,9,10)  ' 控制虚拟轴
+	MOVE(0,0,5*LENGTH_UNIT,0,0)
+	? "DPOS(0)="DPOS(0)
+	? "DPOS(8)="DPOS(8)
 END SUB
