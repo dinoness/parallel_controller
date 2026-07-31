@@ -35,10 +35,10 @@ GLOBAL SUB TRAJ_MOVE()
         cur_group_id = n_loop MOD NUM_TRACE_DATA_GROUP
 
         ' 等待上位机写入当前组数据
-        data_state = MODBUS_REG(REG_TRACE_CMD_STATE_BEGIN + cur_group_id)
+        data_state = MODBUS_REG(REG_TRACE_CMD_STATE_ST + cur_group_id)
         WHILE (data_state <> F_DataUpdate)
             DELAY(10)
-            data_state = MODBUS_REG(REG_TRACE_CMD_STATE_BEGIN + cur_group_id)
+            data_state = MODBUS_REG(REG_TRACE_CMD_STATE_ST + cur_group_id)
         WEND
 
         loop_start_index = TABLE_TRAJ_BEGIN + cur_group_id * SIZE_TRAJ_BLOCK
@@ -68,7 +68,7 @@ GLOBAL SUB TRAJ_MOVE()
         WEND
 
         ' 当前组已消费，通知上位机可重写
-        MODBUS_REG(REG_TRACE_CMD_STATE_BEGIN + cur_group_id) = F_DataUsed
+        MODBUS_REG(REG_TRACE_CMD_STATE_ST + cur_group_id) = F_DataUsed
         n_loop = n_loop + 1
     WEND
 

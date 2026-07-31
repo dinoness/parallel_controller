@@ -267,7 +267,8 @@ SUB Handle_SYS_ROBOT_MODE(cur_event)
 
     ELSEIF cur_event = EVENT_ROBOT_OUT THEN
         ' 退出机器人模式，回到伺服就绪态
-        CANCEL(1)  ' 用来退出机械手模式
+		RAPIDSTOP
+        CANCEL  ' 用来退出机械手模式，CANCEL(0)才能完整退出机械手模式
         system_state = SYS_SERVO_READY
         PRINT "[FSM] 退出机器人模式，状态: SYS_ROBOT_MODE -> SYS_SERVO_READY"
 
