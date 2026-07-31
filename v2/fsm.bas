@@ -191,6 +191,8 @@ SUB Handle_SYS_READY(cur_event)
 
     ELSEIF cur_event = EVENT_ROBOT_IN THEN
         ' 进入机器人模式，允许笛卡尔空间运动
+        ' 建立 CONNFRAME 逆解连接（退出机器人模式时由 ROBOT_OUT 分支的 CANCEL(1) 断开）
+        ROBOT_MODE()
         system_state = SYS_ROBOT_MODE
         PRINT "[FSM] 进入机器人模式，状态: SYS_READY -> SYS_ROBOT_MODE"
 
@@ -250,7 +252,7 @@ SUB Handle_SYS_ROBOT_MODE(cur_event)
 
     ELSEIF cur_event = EVENT_TRAJ THEN
         ' 轨迹执行
-        RUNTASK TASK_TRAJ, TRAJ_TASK()
+        RUNTASK TASK_TRAJ, TRAJ_MOVE()
         motion_mode = MODE_TRAJECTORY
         active_task = TASK_TRAJ
         system_state = SYS_RUNNING

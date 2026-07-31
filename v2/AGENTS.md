@@ -69,7 +69,8 @@ main.bas
   ├── fsm.bas              (CHECK_EVENT, SMF_DISPATCH, 及各 Handle_* 和任务函数)
   │     ├── home_mgr.bas        (home_robot — 通过 RUNTASK 调用)
   │     ├── manual_joint_mgr.bas (MANNUAL_JOINT — 通过 RUNTASK 调用)
-  │     └── [待实现] cart_jog, traj 模块
+  │     ├── traj_move_mgr.bas   (TRAJ_MOVE — 通过 RUNTASK 调用)
+  │     └── [待实现] cart_jog 模块
   └── safety_mgr.bas       (独立 WHILE 1 任务)
 ```
 
@@ -126,7 +127,7 @@ SYS_BOOT → SYS_BUS_INIT → SYS_SERVO_READY ⇄ SYS_HOMING → SYS_READY ⇄ S
 | TASK_HOEM (1) | 回零 | HOME_TASK() → home_robot() | MODE_HOME |
 | TASK_JOINT (2) | 单轴手动 | JOINT_TASK() → MANNUAL_JOINT() | MODE_JOINT_MANUAL |
 | TASK_CATR_JOG (3) | 笛卡尔点动 | CART_JOG_TASK()（待实现） | MODE_CART_JOG |
-| TASK_TRAJ (4) | 轨迹执行 | TRAJ_TASK()（待实现） | MODE_TRAJECTORY |
+| TASK_TRAJ (4) | 轨迹执行 | TRAJ_TASK() → TRAJ_MOVE() | MODE_TRAJECTORY |
 
 任务之间互斥，同一时间只能有一个运动任务在运行。暂停/恢复通过 `PAUSETASK`/`RESUMETASK` 实现。
 
@@ -199,7 +200,7 @@ SYS_BOOT → SYS_BUS_INIT → SYS_SERVO_READY ⇄ SYS_HOMING → SYS_READY ⇄ S
 - [x] 逆解（闭环矢量法，frame1000.c）
 - [ ] 正解（当前为桩实现，返回固定坐标）
 - [ ] 笛卡尔点动（CART_JOG_TASK 为桩函数）
-- [ ] 轨迹执行器（TRAJ_TASK 为桩函数）
+- [x] 轨迹执行器（TRAJ_MOVE，支持 MOVE/MOVEABS/MOVE_PTABS，cmd_id=0 结束标记）
 - [ ] 安全监控完整实现
 - [ ] 限位检测逻辑
 

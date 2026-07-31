@@ -70,9 +70,10 @@ GLOBAL SUB GLOBAL_DEF()
     GLOBAL CONST MODE_SENSOR_CLOSED    = 5
 
     ' motion_cmd_id
-    GLOBAL CONST CMD_NONE        = 0  ' 无命令
+    GLOBAL CONST CMD_NONE        = 0  ' 无命令（轨迹中作为结束标记）
     GLOBAL CONST CMD_MOVE        = 1  '
     GLOBAL CONST CMD_MOVE_ABS    = 2
+    GLOBAL CONST CMD_MOVE_PTABS  = 10  ' 单位时间绝对运动，第7字段为ticks
 
     ' State flag of data
     GLOBAL CONST F_DataUpdate     = 1
@@ -89,7 +90,11 @@ GLOBAL SUB GLOBAL_DEF()
     GLOBAL CONST SIZE_CART_CMD  = 7
 
     ' Trajectory
-    GLOBAL CONST NUM_TRACE_DATA_GROUP = 10
+    GLOBAL CONST NUM_TRACE_DATA_GROUP    = 10
+    GLOBAL CONST TABLE_TRAJ_BEGIN        = 1000  ' 轨迹数据 TABLE 起始地址
+    GLOBAL CONST SIZE_TRAJ_CMD           = 7     ' 一条指令的数据个数
+    GLOBAL CONST NUM_TRAJ_CMD_PER_GROUP  = 100   ' 每组指令数
+    GLOBAL CONST SIZE_TRAJ_BLOCK         = SIZE_TRAJ_CMD * NUM_TRAJ_CMD_PER_GROUP  ' 每组占700个TABLE位置
 
 
     ' ======================================================
@@ -142,7 +147,7 @@ END SUB
 
 
 ' 配置运动相关的参数
-GLOBAL SUB AXIS_CONGIF()
+GLOBAL SUB AXIS_CONFIG()
     GLOBAL CONST LENGTH_UNIT = 1  ' 长度单位转化，1代表mm，1000代表um
     GLOBAL CONST PB = 5 * LENGTH_UNIT  ' 丝杠导程
     GLOBAL CONST ENCODER_PER_ROE = 8388608  ' 2^23

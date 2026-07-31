@@ -59,7 +59,7 @@ MODBUS_REG(REG_SYSTEM_STATE) = SYS_SERVO_READY
 ' 运动参数配置
 '========================================================
 '' ==========  设置运动相关参数  ==========
-AXIS_CONGIF()
+AXIS_CONFIG()
 
 '' ==========  定义几何尺寸  ==========
 ROBO_PARA_CONFIG1(bus_total_axis_num)
