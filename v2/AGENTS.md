@@ -200,7 +200,7 @@ SYS_BOOT → SYS_BUS_INIT → SYS_SERVO_READY ⇄ SYS_HOMING → SYS_READY ⇄ S
 - [x] 逆解（闭环矢量法，frame1000.c）
 - [ ] 正解（当前为桩实现，返回固定坐标）
 - [ ] 笛卡尔点动（CART_JOG_TASK 为桩函数）
-- [x] 轨迹执行器（TRAJ_MOVE，支持 MOVE/MOVEABS/MOVE_PTABS，cmd_id=0 结束标记）
+- [x] 轨迹执行器（TRAJ_MOVE，支持 MOVE/MOVEABS/MOVE_PTABS/MOVE_DELAY，cmd_id=0 结束标记）
 - [ ] 安全监控完整实现
 - [ ] 限位检测逻辑
 

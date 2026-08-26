@@ -74,6 +74,7 @@ GLOBAL SUB GLOBAL_DEF()
     GLOBAL CONST CMD_MOVE        = 1  '
     GLOBAL CONST CMD_MOVE_ABS    = 2
     GLOBAL CONST CMD_MOVE_PTABS  = 10  ' 单位时间绝对运动，第7字段为ticks
+    GLOBAL CONST CMD_MOVE_DELAY  = 20  ' 缓冲延时，第7字段为延时毫秒数(ms)
 
     ' State flag of data
     GLOBAL CONST F_DataUpdate     = 1

@@ -5,6 +5,7 @@
 '     cmd_id, x, y, z, theta, phi, ticks/blank
 '   cmd_id: 1=MOVE 相对直线, 2=MOVEABS 绝对直线,
 '           10=MOVE_PTABS 单位时间绝对(ticks为第7字段),
+'           20=MOVE_DELAY 缓冲延时(第7字段为延时毫秒数ms),
 '           0=CMD_NONE 轨迹结束标记
 '   组状态: MODBUS_REG(REG_TRACE_CMD_STATE_BEGIN + 组号)
 '     F_DataUpdate=1 上位机已写入, F_DataUsed=2 控制器已消费
@@ -57,6 +58,8 @@ GLOBAL SUB TRAJ_MOVE()
                 MOVEABS(TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
             ELSEIF cmd_id = CMD_MOVE_PTABS THEN
                 MOVE_PTABS(TABLE(i_loop+6), TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
+            ELSEIF cmd_id = CMD_MOVE_DELAY THEN
+                MOVE_DELAY(TABLE(i_loop+6))
             ELSE
                 ' 非法指令：取消缓冲运动并上报错误
                 PRINT "[TRAJ] 非法指令代号: ", cmd_id, " TABLE索引: ", i_loop

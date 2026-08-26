@@ -99,7 +99,7 @@ MODBUS_REG（位寄存器）0~7999
 轨迹数据区（1000-9999）布局：
 - 10 个指令组，每组 100 条指令，每条 7 个数（一组占 700 个 TABLE 位置）
 - 每条指令：`cmd_id, x, y, z, theta, phi, ticks/blank`
-- cmd_id：1=MOVE（相对直线）、2=MOVEABS（绝对直线）、10=MOVE_PTABS（单位时间绝对，第 7 字段为 ticks）、0=轨迹结束标记
+- cmd_id：1=MOVE（相对直线）、2=MOVEABS（绝对直线）、10=MOVE_PTABS（单位时间绝对，第 7 字段为 ticks）、20=MOVE_DELAY（缓冲延时，第 7 字段为延时毫秒数 ms）、0=轨迹结束标记
 - 第 g 组起始地址 = 1000 + g × 700；组状态寄存器为 MODBUS_REG(50 + g)
 
 #### MODEBUS_REG
