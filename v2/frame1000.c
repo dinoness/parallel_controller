@@ -118,8 +118,8 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     uw[0] = pfWorldin[0];   // 位置 x   um
     uw[1] = pfWorldin[1];   // 位置 y   um
     uw[2] = pfWorldin[2];   // 位置 z   um
-    uw[3] = pfWorldin[3];   // 位置 phi 弧度  动平台z轴和世界坐标z轴的夹角
-    uw[4] = pfWorldin[4];   // 位置 theta 弧度  动平台z轴在世界坐标xoy平面投影线和世界坐标x轴夹角
+    uw[3] = pfWorldin[3];   // 位置 phi 角度  动平台z轴和世界坐标z轴的夹角
+    uw[4] = pfWorldin[4];   // 位置 theta 角度  动平台z轴在世界坐标xoy平面投影线和世界坐标x轴夹角
 
     //转弧度
     uw[3] = radians(uw[3]);
