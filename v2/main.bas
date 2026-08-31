@@ -67,6 +67,9 @@ ROBO_PARA_CONFIG1(bus_total_axis_num)
 '' ==========  定义机械手  ==========
 DEFINE_CFRAME  1000,BUS_NODE_NUM,0,0,0    'framenum, totalaxises, axises_aux,  max_attitudes,  rotatetype
 
+'' ==========  开启中断功能  ==========
+INT_ENABLE = 1
+
 
 
 '========================================================

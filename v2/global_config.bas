@@ -106,6 +106,7 @@ GLOBAL SUB GLOBAL_DEF()
     GLOBAL CONST TASK_JOINT         = 2
     GLOBAL CONST TASK_CATR_JOG      = 3
     GLOBAL CONST TASK_TRAJ          = 4
+    GLOBAL CONST TASK_CTRL_MOVE     = 5
 
 
     ' error code
