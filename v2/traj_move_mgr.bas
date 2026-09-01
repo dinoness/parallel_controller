@@ -56,6 +56,8 @@ GLOBAL SUB TRAJ_MOVE()
                 MOVE(TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
             ELSEIF cmd_id = CMD_MOVE_ABS THEN
                 MOVEABS(TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
+            ELSEIF cmd_id = CMD_MOVE_PT THEN
+                MOVE_PT(TABLE(i_loop+6), TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
             ELSEIF cmd_id = CMD_MOVE_PTABS THEN
                 MOVE_PTABS(TABLE(i_loop+6), TABLE(i_loop+1), TABLE(i_loop+2), TABLE(i_loop+3), TABLE(i_loop+4), TABLE(i_loop+5))
             ELSEIF cmd_id = CMD_MOVE_DELAY THEN

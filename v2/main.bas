@@ -71,6 +71,13 @@ DEFINE_CFRAME  1000,BUS_NODE_NUM,0,0,0    'framenum, totalaxises, axises_aux,  m
 INT_ENABLE = 1
 
 
+'' ==========  闭环模式变量  ==========
+GLOBAL cmd_pos(5)      ' 指令目标位姿，0-4: x,y,z,theta,phi
+GLOBAL adj_pos(5)      ' 力控微调偏移量（由 Force_Tune 计算，当前恒为0）
+GLOBAL has_target      ' 已读取到有效目标标志
+GLOBAL ctrl_index      ' 下一条待读指令的 TABLE 索引
+GLOBAL traj_over       ' 轨迹结束标志（遇到 CMD_NONE 或非法指令）
+
 
 '========================================================
 ' 主循环

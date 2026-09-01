@@ -19,12 +19,7 @@
 '   运动对象为并联机构虚拟轴（6-10），CONNFRAME 由 FSM 进入机器人模式时建立。
 ' ================================================================
 
-' 模块变量
-DIM cmd_pos(5)      ' 指令目标位姿，0-4: x,y,z,theta,phi
-DIM adj_pos(5)      ' 力控微调偏移量（由 Force_Tune 计算，当前恒为0）
-DIM has_target      ' 已读取到有效目标标志
-DIM ctrl_index      ' 下一条待读指令的 TABLE 索引
-DIM traj_over       ' 轨迹结束标志（遇到 CMD_NONE 或非法指令）
+
 
 ' 启动闭环周期任务
 GLOBAL SUB CTRL_MOVE()
@@ -69,21 +64,21 @@ SUB Read_Ctrl_Cmd()
             cmd_id = TABLE(ctrl_index)
             IF cmd_id = CMD_MOVE_PTABS THEN
                 FOR i = 0 TO 4
-                    cmd_pos(i) = TABLE(ctrl_index + 1 + i)
+                    cmd_pos(i) = TABLE(ctrl_index + 1 + i)					
                 NEXT
                 has_target = 1
             ELSEIF cmd_id = CMD_NONE THEN
                 ' 轨迹结束标记：释放当前组，停止周期任务并通知 FSM 退出闭环模式
                 MODBUS_REG(REG_TRACE_CMD_STATE_ST + cur_group) = F_DataUsed
-                CTRL_MOVE_END()
                 traj_over = 1
                 MODBUS_REG(REG_EVENT_L1) = EVENT_CTRL_DONE
+                CTRL_MOVE_END()
             ELSE
                 PRINT "[CTRL] 非法指令代号: ", cmd_id, " TABLE索引: ", ctrl_index
                 MODBUS_REG(REG_CMD_ERROR) = ERR_UNKNOWN_CMD
-                CTRL_MOVE_END()
                 traj_over = 1
                 MODBUS_REG(REG_EVENT_L1) = EVENT_CTRL_DONE
+                CTRL_MOVE_END()
             ENDIF
             ' 推进索引，跨组时释放当前组并回绕到下一组
             ctrl_index = ctrl_index + SIZE_TRAJ_CMD
