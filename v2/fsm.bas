@@ -94,6 +94,12 @@ SUB Handle_SYS_SERVO_READY(cur_event)
         MODBUS_REG(REG_CMD_ERROR) = ERR_NEED_HOME
         ' 状态不变，仍为 SYS_SERVO_READY
 
+    ELSEIF cur_event = EVENT_CTRL THEN
+        ' 拒绝：闭环控制需要先回零
+        PRINT "[FSM] 拒绝闭环: 请先执行回零操作"
+        MODBUS_REG(REG_CMD_ERROR) = ERR_NEED_HOME
+        ' 状态不变，仍为 SYS_SERVO_READY
+
     ELSEIF cur_event = EVENT_STOP THEN
         ' 当前无运动任务，无需操作
         PRINT "[FSM] 系统已空闲，无需停止"
@@ -213,6 +219,11 @@ SUB Handle_SYS_READY(cur_event)
         PRINT "[FSM] 拒绝轨迹: 请先进入机器人模式(EVENT_ROBOT_IN)"
         MODBUS_REG(REG_CMD_ERROR) = ERR_SYSTEM_NOT_READY
 
+    ELSEIF cur_event = EVENT_CTRL THEN
+        ' 拒绝：闭环控制需要先进入机器人模式
+        PRINT "[FSM] 拒绝闭环: 请先进入机器人模式(EVENT_ROBOT_IN)"
+        MODBUS_REG(REG_CMD_ERROR) = ERR_SYSTEM_NOT_READY
+
     ELSEIF cur_event = EVENT_STOP THEN
         ' 当前无运动，无需停止
         PRINT "[FSM] 系统已空闲，无需停止"
@@ -256,6 +267,14 @@ SUB Handle_SYS_ROBOT_MODE(cur_event)
         active_task = TASK_TRAJ
         system_state = SYS_RUNNING
         PRINT "[FSM] 轨迹执行开始，状态: SYS_ROBOT_MODE -> SYS_RUNNING"
+
+    ELSEIF cur_event = EVENT_CTRL THEN
+        ' 闭环控制（力控微调）：INT_CYCLE 周期任务，直接启动，无需 RUNTASK
+        CTRL_MOVE()
+        motion_mode = MODE_SENSOR_CLOSED
+        active_task = TASK_CTRL_MOVE
+        system_state = SYS_RUNNING
+        PRINT "[FSM] 闭环控制开始，状态: SYS_ROBOT_MODE -> SYS_RUNNING"
 
     ELSEIF cur_event = EVENT_JOINT THEN
         ' 单轴手动调整（完成后回 SYS_SERVO_READY，而非 SYS_ROBOT_MODE）
@@ -316,6 +335,9 @@ SUB Handle_SYS_RUNNING(cur_event)
         ELSEIF motion_mode = MODE_TRAJECTORY THEN
             STOPTASK TASK_TRAJ
             PRINT "[FSM] 轨迹执行被停止"
+        ELSEIF motion_mode = MODE_SENSOR_CLOSED THEN
+            CTRL_MOVE_END()
+            PRINT "[FSM] 闭环控制被停止"
         ENDIF
 
         RAPIDSTOP(4)  ' 取消当前运动和缓冲运动
@@ -352,6 +374,13 @@ SUB Handle_SYS_RUNNING(cur_event)
         system_state = SYS_ROBOT_MODE
         PRINT "[FSM] 轨迹执行完成，状态: SYS_RUNNING -> SYS_ROBOT_MODE"
 
+    ELSEIF cur_event = EVENT_CTRL_DONE THEN
+        ' 闭环控制结束（周期任务读到 cmd_id=0 后已自行停止，此处仅切换状态）
+        motion_mode = MODE_IDLE
+        active_task = -1
+        system_state = SYS_ROBOT_MODE
+        PRINT "[FSM] 闭环控制完成，状态: SYS_RUNNING -> SYS_ROBOT_MODE"
+
     ELSEIF cur_event = EVENT_HOME_DONE THEN
         ' 回零任务在 RUNNING 期间完成（回零自身是运动）
         STOPTASK TASK_HOEM
@@ -366,6 +395,9 @@ SUB Handle_SYS_RUNNING(cur_event)
         STOPTASK TASK_CATR_JOG
         STOPTASK TASK_TRAJ
         STOPTASK TASK_HOEM
+        IF motion_mode = MODE_SENSOR_CLOSED THEN
+            CTRL_MOVE_END()
+        ENDIF
         ' 调用外部函数: enter_estop()
         ' CALL enter_estop()
         system_state = SYS_ESTOP
@@ -397,6 +429,11 @@ SUB Handle_SYS_RUNNING(cur_event)
         PRINT "[FSM] 轨迹任务已在进行中"
         ' 状态不变
 
+    ELSEIF cur_event = EVENT_CTRL THEN
+        ' 已在运行闭环控制，拒绝重复
+        PRINT "[FSM] 闭环控制任务已在进行中"
+        ' 状态不变
+
     ELSEIF cur_event = EVENT_HOME THEN
         ' 已在运行其他任务，拒绝回零
         PRINT "[FSM] 请先停止当前运动再执行回零"
@@ -422,6 +459,8 @@ SUB Handle_SYS_PAUSED(cur_event)
             STOPTASK TASK_JOINT
         ELSEIF motion_mode = MODE_CART_JOG THEN
             STOPTASK TASK_CATR_JOG
+        ELSEIF motion_mode = MODE_SENSOR_CLOSED THEN
+            CTRL_MOVE_END()
         ENDIF
 
         RAPIDSTOP(1)  ' 取消缓冲运动

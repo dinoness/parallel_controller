@@ -101,6 +101,7 @@ MODBUS_REG（位寄存器）0~7999
 - 每条指令：`cmd_id, x, y, z, theta, phi, ticks/blank`
 - cmd_id：1=MOVE（相对直线）、2=MOVEABS（绝对直线）、10=MOVE_PTABS（单位时间绝对，第 7 字段为 ticks）、20=MOVE_DELAY（缓冲延时，第 7 字段为延时毫秒数 ms）、0=轨迹结束标记
 - 第 g 组起始地址 = 1000 + g × 700；组状态寄存器为 MODBUS_REG(50 + g)
+- **闭环控制（ctrL_mgr.bas）与轨迹执行共用本数据区及组状态寄存器**：闭环模式仅消费 cmd_id=10（MOVE_PTABS，每伺服周期消费一条并下发，ticks 固定为 1，指令第 7 字段不使用）和 cmd_id=0（结束标记）
 
 #### MODEBUS_REG
 0-49，系统状态指示

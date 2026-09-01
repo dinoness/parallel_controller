@@ -116,7 +116,7 @@ SYS_BOOT → SYS_BUS_INIT → SYS_SERVO_READY ⇄ SYS_HOMING → SYS_READY ⇄ S
 | 中等 | REG_EVENT_BEGIN+1 (91) | 运动完成通知（由控制器任务写入） |
 | 一般 | REG_EVENT_BEGIN+2 (92) | 上位机命令（HOME、JOINT、CART_JOG、TRAJ 等） |
 
-事件 ID 定义见 `global_config.bas:43-57`（EVENT_HOME=1, EVENT_JOINT=3, EVENT_CART_JOG=5, EVENT_TRAJ=7, EVENT_STOP=9 等）。
+事件 ID 定义见 `global_config.bas:45-59`（EVENT_HOME=1, EVENT_JOINT=3, EVENT_CART_JOG=5, EVENT_TRAJ=7, EVENT_CTRL=9, EVENT_STOP=81 等）。
 
 ### 任务管理
 
@@ -128,8 +128,12 @@ SYS_BOOT → SYS_BUS_INIT → SYS_SERVO_READY ⇄ SYS_HOMING → SYS_READY ⇄ S
 | TASK_JOINT (2) | 单轴手动 | JOINT_TASK() → MANNUAL_JOINT() | MODE_JOINT_MANUAL |
 | TASK_CATR_JOG (3) | 笛卡尔点动 | CART_JOG_TASK()（待实现） | MODE_CART_JOG |
 | TASK_TRAJ (4) | 轨迹执行 | TRAJ_TASK() → TRAJ_MOVE() | MODE_TRAJECTORY |
+| TASK_CTRL_MOVE (5) | 闭环控制（力控微调） | CTRL_MOVE() → INT_CYCLE 周期执行 PID_MOVE() | MODE_SENSOR_CLOSED |
 
 任务之间互斥，同一时间只能有一个运动任务在运行。暂停/恢复通过 `PAUSETASK`/`RESUMETASK` 实现。
+注意：闭环控制不是 RUNTASK 任务，而是 `INT_CYCLE` 中断周期任务（每个 SERVO_PERIOD 执行一次 PID_MOVE），
+由 `CTRL_MOVE()` 启动、`CTRL_MOVE_END()` 停止；周期任务读到 cmd_id=0（CMD_NONE）时自行停止并写
+`EVENT_CTRL_DONE` 通知 FSM 退出闭环模式。
 
 ### 运动学系统
 
@@ -201,6 +205,7 @@ SYS_BOOT → SYS_BUS_INIT → SYS_SERVO_READY ⇄ SYS_HOMING → SYS_READY ⇄ S
 - [ ] 正解（当前为桩实现，返回固定坐标）
 - [ ] 笛卡尔点动（CART_JOG_TASK 为桩函数）
 - [x] 轨迹执行器（TRAJ_MOVE，支持 MOVE/MOVEABS/MOVE_PTABS/MOVE_DELAY，cmd_id=0 结束标记）
+- [ ] 力控闭环微调（ctrL_mgr.bas：INT_CYCLE 周期任务，与轨迹共用数据区，每伺服周期消费一条 MOVE_PTABS 指令并下发（ticks=1）；FSM 已接入 EVENT_CTRL/EVENT_CTRL_DONE，读到 cmd_id=0 自行退出；传感器读取与微调算法待实现）
 - [ ] 安全监控完整实现
 - [ ] 限位检测逻辑
 
