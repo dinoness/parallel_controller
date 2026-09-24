@@ -57,6 +57,14 @@ uint32 SOFRAME_INIT1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, T
 
     g_soframeinfo[0].LENGTH_UNIT = *(pParaList + 40);
 
+    for(i = 0; i < 5; i++)
+    {
+        g_soframeinfo[0].zero_pose[i] = *(pParaList + 41 + i);
+    }
+
+    g_soframeinfo[0].d_bais = *(pParaList + 46);
+
+
     for(i = 0; i < SOFRAME_TABLE_NUM; i++)
 	{
 		g_soframeinfo[0].m_table[i] = pParaList[i];
@@ -132,17 +140,22 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     vec3 B[5];
     vec3 M[5];
     vec3 Mw[5];
-    vec3 ObB1;
+    vec3 w;              // w = b1 - o（iks_nonideal.m 中的 w）
+    vec3 s0, t0;         // s0: 理想约束下的 x 轴；t0 = z × s0（⊥z 平面内另一单位方向）
     vec3 xb, yb, zb;
     vec3 v_temp;
     mat3x3 R_plant;  // [xb yb zb]
 
     vec3 v_plant;  // OaOb
     vec3 v_limb[5];  // 支链向量
-    vec3 s_limb[5];  // 支链向量归一化
     float l_limb[5];  // 支链长度
     fp32 l_limb0[5];  // 直连初始长度
+    fp32 d_bais;      // R副偏置距离 d
+    float rho;        // w 在 ⊥z 平面内的投影长度 ||w × z||
+    float sd;         // sinψ = d / rho，x 相对理想方向的偏角正弦
+    float cs;         // cosψ = sqrt(1 - sd^2)，取与理想约束连续的分支（cosψ>0）
 
+    d_bais = g_soframeinfo->d_bais;
     for(int i_axis = 0; i_axis < 5; i_axis++)
     {
         B[i_axis].x = g_soframeinfo->b[i_axis][0];
@@ -153,6 +166,12 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
         M[i_axis].x = g_soframeinfo->m[i_axis][0];
         M[i_axis].y = g_soframeinfo->m[i_axis][1];
         M[i_axis].z = g_soframeinfo->m[i_axis][2];
+
+        // 支链1（数组下标0，对应 iks_nonideal.m 的 i==1）连接点 a1* = a1 + d·e1
+        if(i_axis == 0)
+        {
+            M[i_axis].x = M[i_axis].x + g_soframeinfo->d_bais;
+        }
         
         l_limb0[i_axis] = g_soframeinfo->limb0[i_axis];        
     }
@@ -161,20 +180,45 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
     v_plant.y = uw[1];
     v_plant.z = uw[2];
 
-    // ObB1 = -v_plant + B1
+    // w = b1 - o
     vec3_mult_v_copy(&v_temp, &v_plant, -1);
-    vec3_add_copy(&ObB1, &(B[0]), &v_temp);
+    vec3_add_copy(&w, &(B[0]), &v_temp);
 
-    // zb
+    // zb 由 (phi, theta) 确定
     zb.x = sin(uw[4])*cos(uw[3]);
     zb.y = sin(uw[4])*sin(uw[3]);
     zb.z = cos(uw[4]);
 
-    // xb = (ObB1 x zb) / ||ObB1 x zb|| 
-    vec3_cross_copy(&xb, &ObB1, &zb);
-    vec3_normalize_copy(&xb, &xb);
+    // s0 = w × z，rho = ||s0|| 为 w 在 ⊥z 平面内的投影长度
+    vec3_cross_copy(&s0, &w, &zb);
+    rho = vec3_length(&s0);
+    if(rho < 1e-6f)
+    {
+        rtprintf("SOFRAME_RETRANS1000 逆解失败: b1-o 与 z 轴平行, rho=%.6e\n", (double)rho);
+        return -2;
+    }
 
-    // yb = zb x xb
+    // sd = d / rho，须满足 |sd| < 1（对应 iks_nonideal.m 中的 assert）
+    sd = d_bais / rho;
+    if(fabs(sd) >= 1.0)
+    {
+        rtprintf("SOFRAME_RETRANS1000 逆解失败: |d|=%.6e 超出可行范围(rho=%.6e)\n", (double)d_bais, (double)rho);
+        return -3;
+    }
+
+    // s0 归一化 → 理想约束下的 x 轴（同 pos2trans）
+    vec3_normalize_copy(&s0, &s0);
+
+    // t0 = z × s0（⊥z 平面内另一单位方向，t0·w = rho）
+    vec3_cross_copy(&t0, &zb, &s0);
+
+    // xb = sqrt(1-sd^2)*s0 + sd*t0（取与理想约束连续的分支；d=0 时退化为理想约束 xb=s0）
+    cs = sqrt(1.0 - sd*sd);
+    vec3_mult_v_copy(&xb, &s0, cs);
+    vec3_mult_v_copy(&v_temp, &t0, sd);
+    vec3_add_copy(&xb, &xb, &v_temp);
+
+    // yb = z × x
     vec3_cross_copy(&yb, &zb, &xb);
 
     // R_plant = [xb yb zb]
@@ -186,7 +230,7 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
         mat3x3_mult_v3_copy(&(Mw[i_axis]), &R_plant, &(M[i_axis]));
     }
 
-    // 计算支链长度
+    // 计算支链长度  L_i = |o + R·a_i - b_i|
     for(int i_axis = 0; i_axis < 5; i_axis++)
     {
         // v_limb(i) = - B(i) + v_plant + Mw(i)
@@ -196,7 +240,7 @@ uint32 SOFRAME_RETRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe
         l_limb[i_axis] = vec3_length(&(v_limb[i_axis]));
     }
 
-    // 转化为脉冲数
+    // 转化为脉冲数  q_i = (L_i - l0_i) * u_ji
     pfJointPulseout[0] = (l_limb[0] - l_limb0[0]) * g_soframeinfo->u_j1;
     pfJointPulseout[1] = (l_limb[1] - l_limb0[1]) * g_soframeinfo->u_j2;
     pfJointPulseout[2] = (l_limb[2] - l_limb0[2]) * g_soframeinfo->u_j3;
@@ -244,11 +288,17 @@ uint32 SOFRAME_TRANS1000(struct_soZmcDisp *pzmc,  struct_soFrameStatus* pframe, 
     // uj[1] = *(pfJointPulsein + 1) / pf->u_j2;
     
     // 必须先回零=================================================================
-    pfWorldout[0] = 0;  // x
-    pfWorldout[1] = 0;  // y
-    pfWorldout[2] = -800 * LENGTH_UNIT;  // z
-    pfWorldout[3] = 0;  // theta
-    pfWorldout[4] = 0;  // phi
+    pfWorldout[0] = g_soframeinfo->zero_pose[0];  // x
+    pfWorldout[1] = g_soframeinfo->zero_pose[1];  // y
+    pfWorldout[2] = g_soframeinfo->zero_pose[2];  // z
+    pfWorldout[3] = g_soframeinfo->zero_pose[3];  // theta
+    pfWorldout[4] = g_soframeinfo->zero_pose[4];  // phi
+
+    // pfWorldout[0] = 0;  // x
+    // pfWorldout[1] = 0;  // y
+    // pfWorldout[2] = -800 * LENGTH_UNIT;  // z
+    // pfWorldout[3] = 0;  // theta
+    // pfWorldout[4] = 0;  // phi
 
     // pfWorldout[0] = 0;  // x
     // pfWorldout[1] = 0;  // y

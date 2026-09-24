@@ -614,6 +614,10 @@ typedef struct str_userframeinfo
     fp64 u_j5;
     // 尺寸系数
     fp32 LENGTH_UNIT;
+    // 零位位姿
+    fp64 zero_pose[5];
+    // R副偏差
+    fp32 d_bais;
     //虚拟轴的unit
     fp64 m_pulsev; 
 
